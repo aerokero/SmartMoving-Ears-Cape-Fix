@@ -248,7 +248,7 @@ public class EarSkinCompat {
 
     public static void beforeRenderCape(Object mp) {
         syncEarsModel();
-        if (mp == mainModel || (earsModelPatched && mp == getEarsMyModel())) {
+        if (mp instanceof net.minecraft.move.ModelPlayer || (earsModelPatched && mp == getEarsMyModel())) {
             try {
                 fh model = (fh) mp;
                 if (model != null && model.i instanceof net.minecraft.move.ModelCapeRenderer) {
@@ -283,8 +283,48 @@ public class EarSkinCompat {
     }
 
     public static void afterRenderCape(Object mp) {
-        if (mp == mainModel || (earsModelPatched && mp == getEarsMyModel())) {
+        if (mp instanceof net.minecraft.move.ModelPlayer || (earsModelPatched && mp == getEarsMyModel())) {
             org.lwjgl.opengl.GL11.glPushMatrix();
+        }
+    }
+
+    public static void adjustCape(Object capeRenderer, Object player) {
+        try {
+            if (player instanceof gs) {
+                gs p = (gs) player;
+                boolean isSneaking = p.al();
+                
+                boolean isVanilla = false;
+                if (mainModel != null && mainModel.i == capeRenderer) {
+                    isVanilla = true;
+                } else if (earsModelPatched && getEarsMyModel() != null && getEarsMyModel().i == capeRenderer) {
+                    isVanilla = true;
+                }
+                
+                if (isVanilla) {
+                    // Move vanilla cape back 2 voxels (0.125f)
+                    org.lwjgl.opengl.GL11.glTranslatef(0.0f, 0.0f, 0.125f);
+                    
+                    if (isSneaking) {
+                        // Move down and forward for crouching body
+                        org.lwjgl.opengl.GL11.glTranslatef(0.0f, 0.08f, -0.06f);
+                        // Rotate to tilt forward
+                        org.lwjgl.opengl.GL11.glRotatef(20.0f, 1.0f, 0.0f, 0.0f);
+                    }
+                } else {
+                    // Move Aether cape back 1 voxel (0.0625f)
+                    org.lwjgl.opengl.GL11.glTranslatef(0.0f, 0.0f, 0.0625f);
+                    
+                    if (isSneaking) {
+                        // Move down and forward for crouching body
+                        org.lwjgl.opengl.GL11.glTranslatef(0.0f, 0.08f, -0.06f);
+                        // Rotate to tilt forward
+                        org.lwjgl.opengl.GL11.glRotatef(20.0f, 1.0f, 0.0f, 0.0f);
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            // Ignore
         }
     }
 
