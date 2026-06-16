@@ -1,0 +1,427 @@
+﻿Compiled from "com_unascribed_ears_Ears.java"
+class com_unascribed_ears_Ears$1 extends com.unascribed.ears.common.legacy.ImmediateEarsRenderDelegate<gs, ps> {
+  final com_unascribed_ears_Ears this$0;
+
+  com_unascribed_ears_Ears$1(com_unascribed_ears_Ears);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: putfield      #1                  // Field this$0:Lcom_unascribed_ears_Ears;
+       5: aload_0
+       6: invokespecial #2                  // Method com/unascribed/ears/common/legacy/ImmediateEarsRenderDelegate."<init>":()V
+       9: return
+
+  protected boolean isVisible(ps);
+    Code:
+       0: aload_1
+       1: getfield      #3                  // Field ps.h:Z
+       4: ireturn
+
+  public boolean isSlim();
+    Code:
+       0: aload_0
+       1: getfield      #4                  // Field peer:Ljava/lang/Object;
+       4: checkcast     #5                  // class gs
+       7: getfield      #6                  // Field gs.l:Ljava/lang/String;
+      10: invokestatic  #7                  // Method com/unascribed/ears/legacy/LegacyHelper.isSlimArms:(Ljava/lang/String;)Z
+      13: ireturn
+
+  protected com.unascribed.ears.api.features.EarsFeatures getEarsFeatures();
+    Code:
+       0: getstatic     #8                  // Field com_unascribed_ears_Ears.earsSkinFeatures:Ljava/util/Map;
+       3: aload_0
+       4: invokevirtual #9                  // Method getSkinUrl:()Ljava/lang/String;
+       7: invokeinterface #10,  2           // InterfaceMethod java/util/Map.containsKey:(Ljava/lang/Object;)Z
+      12: ifeq          63
+      15: getstatic     #8                  // Field com_unascribed_ears_Ears.earsSkinFeatures:Ljava/util/Map;
+      18: aload_0
+      19: invokevirtual #9                  // Method getSkinUrl:()Ljava/lang/String;
+      22: invokeinterface #11,  2           // InterfaceMethod java/util/Map.get:(Ljava/lang/Object;)Ljava/lang/Object;
+      27: checkcast     #12                 // class com/unascribed/ears/api/features/EarsFeatures
+      30: astore_1
+      31: getstatic     #13                 // Field com/unascribed/ears/common/EarsFeaturesStorage.INSTANCE:Lcom/unascribed/ears/common/SimpleEarsFeatureStorage;
+      34: aload_0
+      35: getfield      #4                  // Field peer:Ljava/lang/Object;
+      38: checkcast     #5                  // class gs
+      41: getfield      #6                  // Field gs.l:Ljava/lang/String;
+      44: aload_0
+      45: getfield      #4                  // Field peer:Ljava/lang/Object;
+      48: checkcast     #5                  // class gs
+      51: getfield      #6                  // Field gs.l:Ljava/lang/String;
+      54: invokestatic  #14                 // Method com/unascribed/ears/legacy/LegacyHelper.getUuid:(Ljava/lang/String;)Ljava/util/UUID;
+      57: aload_1
+      58: invokevirtual #15                 // Method com/unascribed/ears/common/SimpleEarsFeatureStorage.put:(Ljava/lang/String;Ljava/util/UUID;Lcom/unascribed/ears/api/features/EarsFeatures;)V
+      61: aload_1
+      62: areturn
+      63: getstatic     #16                 // Field com/unascribed/ears/api/features/EarsFeatures.DISABLED:Lcom/unascribed/ears/api/features/EarsFeatures;
+      66: areturn
+
+  protected void doBindSkin();
+    Code:
+       0: aload_0
+       1: getfield      #1                  // Field this$0:Lcom_unascribed_ears_Ears;
+       4: invokestatic  #17                 // Method com_unascribed_ears_Ears.access$000:(Lcom_unascribed_ears_Ears;)Lds;
+       7: aload_0
+       8: invokevirtual #9                  // Method getSkinUrl:()Ljava/lang/String;
+      11: aload_0
+      12: getfield      #4                  // Field peer:Ljava/lang/Object;
+      15: checkcast     #5                  // class gs
+      18: invokevirtual #18                 // Method gs.q_:()Ljava/lang/String;
+      21: invokevirtual #19                 // Method ds.a:(Ljava/lang/String;Ljava/lang/String;)Z
+      24: pop
+      25: goto          33
+      28: astore_1
+      29: aload_1
+      30: invokevirtual #21                 // Method java/lang/NullPointerException.printStackTrace:()V
+      33: return
+    Exception table:
+       from    to  target type
+           0    25    28   Class java/lang/NullPointerException
+
+  protected void doAnchorTo(com.unascribed.ears.common.render.EarsRenderDelegate$BodyPart, ps);
+    Code:
+       0: aload_2
+       1: ldc           #22                 // float 0.0625f
+       3: invokevirtual #23                 // Method ps.c:(F)V
+       6: ldc           #22                 // float 0.0625f
+       8: ldc           #22                 // float 0.0625f
+      10: ldc           #22                 // float 0.0625f
+      12: invokestatic  #24                 // Method org/lwjgl/opengl/GL11.glScalef:(FFF)V
+      15: aload_2
+      16: invokestatic  #25                 // Method com_unascribed_ears_Ears.access$100:(Lps;)[Lib;
+      19: iconst_3
+      20: aaload
+      21: astore_3
+      22: aload_3
+      23: getfield      #26                 // Field ib.a:Lbt;
+      26: getfield      #27                 // Field bt.a:D
+      29: d2f
+      30: aload_3
+      31: getfield      #26                 // Field ib.a:Lbt;
+      34: getfield      #28                 // Field bt.b:D
+      37: d2f
+      38: aload_3
+      39: getfield      #26                 // Field ib.a:Lbt;
+      42: getfield      #29                 // Field bt.c:D
+      45: d2f
+      46: invokestatic  #30                 // Method org/lwjgl/opengl/GL11.glTranslatef:(FFF)V
+      49: return
+
+  protected com.unascribed.ears.common.util.Decider<com.unascribed.ears.common.render.EarsRenderDelegate$BodyPart, ps> decideModelPart(com.unascribed.ears.common.util.Decider<com.unascribed.ears.common.render.EarsRenderDelegate$BodyPart, ps>);
+    Code:
+       0: aload_0
+       1: getfield      #1                  // Field this$0:Lcom_unascribed_ears_Ears;
+       4: invokestatic  #17                 // Method com_unascribed_ears_Ears.access$000:(Lcom_unascribed_ears_Ears;)Lds;
+       7: getfield      #31                 // Field ds.e:Lko;
+      10: checkcast     #32                 // class fh
+      13: astore_2
+      14: aload_1
+      15: getstatic     #33                 // Field com/unascribed/ears/common/render/EarsRenderDelegate$BodyPart.HEAD:Lcom/unascribed/ears/common/render/EarsRenderDelegate$BodyPart;
+      18: aload_2
+      19: getfield      #34                 // Field fh.a:Lps;
+      22: invokevirtual #35                 // Method com/unascribed/ears/common/util/Decider.map:(Ljava/lang/Object;Ljava/lang/Object;)Lcom/unascribed/ears/common/util/Decider;
+      25: getstatic     #36                 // Field com/unascribed/ears/common/render/EarsRenderDelegate$BodyPart.LEFT_ARM:Lcom/unascribed/ears/common/render/EarsRenderDelegate$BodyPart;
+      28: aload_2
+      29: getfield      #37                 // Field fh.e:Lps;
+      32: invokevirtual #35                 // Method com/unascribed/ears/common/util/Decider.map:(Ljava/lang/Object;Ljava/lang/Object;)Lcom/unascribed/ears/common/util/Decider;
+      35: getstatic     #38                 // Field com/unascribed/ears/common/render/EarsRenderDelegate$BodyPart.LEFT_LEG:Lcom/unascribed/ears/common/render/EarsRenderDelegate$BodyPart;
+      38: aload_2
+      39: getfield      #39                 // Field fh.g:Lps;
+      42: invokevirtual #35                 // Method com/unascribed/ears/common/util/Decider.map:(Ljava/lang/Object;Ljava/lang/Object;)Lcom/unascribed/ears/common/util/Decider;
+      45: getstatic     #40                 // Field com/unascribed/ears/common/render/EarsRenderDelegate$BodyPart.RIGHT_ARM:Lcom/unascribed/ears/common/render/EarsRenderDelegate$BodyPart;
+      48: aload_2
+      49: getfield      #41                 // Field fh.d:Lps;
+      52: invokevirtual #35                 // Method com/unascribed/ears/common/util/Decider.map:(Ljava/lang/Object;Ljava/lang/Object;)Lcom/unascribed/ears/common/util/Decider;
+      55: getstatic     #42                 // Field com/unascribed/ears/common/render/EarsRenderDelegate$BodyPart.RIGHT_LEG:Lcom/unascribed/ears/common/render/EarsRenderDelegate$BodyPart;
+      58: aload_2
+      59: getfield      #43                 // Field fh.f:Lps;
+      62: invokevirtual #35                 // Method com/unascribed/ears/common/util/Decider.map:(Ljava/lang/Object;Ljava/lang/Object;)Lcom/unascribed/ears/common/util/Decider;
+      65: getstatic     #44                 // Field com/unascribed/ears/common/render/EarsRenderDelegate$BodyPart.TORSO:Lcom/unascribed/ears/common/render/EarsRenderDelegate$BodyPart;
+      68: aload_2
+      69: getfield      #45                 // Field fh.c:Lps;
+      72: invokevirtual #35                 // Method com/unascribed/ears/common/util/Decider.map:(Ljava/lang/Object;Ljava/lang/Object;)Lcom/unascribed/ears/common/util/Decider;
+      75: areturn
+
+  protected int uploadImage(java.awt.image.BufferedImage);
+    Code:
+       0: getstatic     #46                 // Field th.a:Lth;
+       3: getfield      #47                 // Field th.e:Lji;
+       6: aload_1
+       7: invokevirtual #48                 // Method ji.a:(Ljava/awt/image/BufferedImage;)I
+      10: ireturn
+
+  protected java.lang.String getSkinUrl();
+    Code:
+       0: aload_0
+       1: getfield      #4                  // Field peer:Ljava/lang/Object;
+       4: checkcast     #5                  // class gs
+       7: getfield      #49                 // Field gs.bA:Ljava/lang/String;
+      10: areturn
+
+  protected float getBrightness();
+    Code:
+       0: aload_0
+       1: getfield      #1                  // Field this$0:Lcom_unascribed_ears_Ears;
+       4: invokestatic  #50                 // Method com_unascribed_ears_Ears.access$200:(Lcom_unascribed_ears_Ears;)F
+       7: freturn
+
+  public float getTime();
+    Code:
+       0: aload_0
+       1: getfield      #4                  // Field peer:Ljava/lang/Object;
+       4: checkcast     #51                 // class sn
+       7: getfield      #52                 // Field sn.bt:I
+      10: i2f
+      11: aload_0
+      12: getfield      #1                  // Field this$0:Lcom_unascribed_ears_Ears;
+      15: invokestatic  #53                 // Method com_unascribed_ears_Ears.access$300:(Lcom_unascribed_ears_Ears;)F
+      18: fadd
+      19: freturn
+
+  public boolean isFlying();
+    Code:
+       0: aload_0
+       1: getfield      #4                  // Field peer:Ljava/lang/Object;
+       4: checkcast     #5                  // class gs
+       7: getfield      #54                 // Field gs.bq:Z
+      10: ireturn
+
+  public boolean isGliding();
+    Code:
+       0: iconst_0
+       1: ireturn
+
+  public boolean isJacketEnabled();
+    Code:
+       0: iconst_1
+       1: ireturn
+
+  public boolean isWearingBoots();
+    Code:
+       0: aload_0
+       1: getfield      #4                  // Field peer:Ljava/lang/Object;
+       4: checkcast     #5                  // class gs
+       7: getfield      #55                 // Field gs.c:Lix;
+      10: getfield      #56                 // Field ix.b:[Liz;
+      13: iconst_0
+      14: aaload
+      15: astore_1
+      16: aload_1
+      17: ifnull        34
+      20: aload_1
+      21: invokevirtual #57                 // Method iz.a:()Lgm;
+      24: instanceof    #58                 // class wa
+      27: ifeq          34
+      30: iconst_1
+      31: goto          35
+      34: iconst_0
+      35: ireturn
+
+  public boolean isWearingChestplate();
+    Code:
+       0: aload_0
+       1: getfield      #4                  // Field peer:Ljava/lang/Object;
+       4: checkcast     #5                  // class gs
+       7: getfield      #55                 // Field gs.c:Lix;
+      10: getfield      #56                 // Field ix.b:[Liz;
+      13: iconst_2
+      14: aaload
+      15: astore_1
+      16: aload_1
+      17: ifnull        34
+      20: aload_1
+      21: invokevirtual #57                 // Method iz.a:()Lgm;
+      24: instanceof    #58                 // class wa
+      27: ifeq          34
+      30: iconst_1
+      31: goto          35
+      34: iconst_0
+      35: ireturn
+
+  public boolean isWearingElytra();
+    Code:
+       0: iconst_0
+       1: ireturn
+
+  public boolean needsSecondaryLayersDrawn();
+    Code:
+       0: iconst_1
+       1: ireturn
+
+  public float getHorizontalSpeed();
+    Code:
+       0: aload_0
+       1: getfield      #4                  // Field peer:Ljava/lang/Object;
+       4: checkcast     #5                  // class gs
+       7: getfield      #59                 // Field gs.bi:F
+      10: aload_0
+      11: getfield      #4                  // Field peer:Ljava/lang/Object;
+      14: checkcast     #5                  // class gs
+      17: getfield      #60                 // Field gs.bj:F
+      20: aload_0
+      21: getfield      #1                  // Field this$0:Lcom_unascribed_ears_Ears;
+      24: invokestatic  #53                 // Method com_unascribed_ears_Ears.access$300:(Lcom_unascribed_ears_Ears;)F
+      27: invokestatic  #61                 // Method com/unascribed/ears/common/EarsCommon.lerpDelta:(FFF)F
+      30: freturn
+
+  public float getLimbSwing();
+    Code:
+       0: aload_0
+       1: getfield      #4                  // Field peer:Ljava/lang/Object;
+       4: checkcast     #5                  // class gs
+       7: getfield      #62                 // Field gs.ak:F
+      10: aload_0
+      11: getfield      #4                  // Field peer:Ljava/lang/Object;
+      14: checkcast     #5                  // class gs
+      17: getfield      #63                 // Field gs.al:F
+      20: aload_0
+      21: getfield      #1                  // Field this$0:Lcom_unascribed_ears_Ears;
+      24: invokestatic  #53                 // Method com_unascribed_ears_Ears.access$300:(Lcom_unascribed_ears_Ears;)F
+      27: invokestatic  #61                 // Method com/unascribed/ears/common/EarsCommon.lerpDelta:(FFF)F
+      30: freturn
+
+  public float getStride();
+    Code:
+       0: aload_0
+       1: getfield      #4                  // Field peer:Ljava/lang/Object;
+       4: checkcast     #5                  // class gs
+       7: getfield      #64                 // Field gs.h:F
+      10: aload_0
+      11: getfield      #4                  // Field peer:Ljava/lang/Object;
+      14: checkcast     #5                  // class gs
+      17: getfield      #65                 // Field gs.i:F
+      20: aload_0
+      21: getfield      #1                  // Field this$0:Lcom_unascribed_ears_Ears;
+      24: invokestatic  #53                 // Method com_unascribed_ears_Ears.access$300:(Lcom_unascribed_ears_Ears;)F
+      27: invokestatic  #61                 // Method com/unascribed/ears/common/EarsCommon.lerpDelta:(FFF)F
+      30: freturn
+
+  public float getBodyYaw();
+    Code:
+       0: aload_0
+       1: getfield      #4                  // Field peer:Ljava/lang/Object;
+       4: checkcast     #5                  // class gs
+       7: getfield      #66                 // Field gs.I:F
+      10: aload_0
+      11: getfield      #4                  // Field peer:Ljava/lang/Object;
+      14: checkcast     #5                  // class gs
+      17: getfield      #67                 // Field gs.H:F
+      20: aload_0
+      21: getfield      #1                  // Field this$0:Lcom_unascribed_ears_Ears;
+      24: invokestatic  #53                 // Method com_unascribed_ears_Ears.access$300:(Lcom_unascribed_ears_Ears;)F
+      27: invokestatic  #61                 // Method com/unascribed/ears/common/EarsCommon.lerpDelta:(FFF)F
+      30: freturn
+
+  public double getCapeX();
+    Code:
+       0: aload_0
+       1: getfield      #4                  // Field peer:Ljava/lang/Object;
+       4: checkcast     #5                  // class gs
+       7: getfield      #68                 // Field gs.o:D
+      10: aload_0
+      11: getfield      #4                  // Field peer:Ljava/lang/Object;
+      14: checkcast     #5                  // class gs
+      17: getfield      #69                 // Field gs.r:D
+      20: aload_0
+      21: getfield      #1                  // Field this$0:Lcom_unascribed_ears_Ears;
+      24: invokestatic  #53                 // Method com_unascribed_ears_Ears.access$300:(Lcom_unascribed_ears_Ears;)F
+      27: invokestatic  #70                 // Method com/unascribed/ears/common/EarsCommon.lerpDelta:(DDF)D
+      30: dreturn
+
+  public double getCapeY();
+    Code:
+       0: aload_0
+       1: getfield      #4                  // Field peer:Ljava/lang/Object;
+       4: checkcast     #5                  // class gs
+       7: getfield      #71                 // Field gs.p:D
+      10: aload_0
+      11: getfield      #4                  // Field peer:Ljava/lang/Object;
+      14: checkcast     #5                  // class gs
+      17: getfield      #72                 // Field gs.s:D
+      20: aload_0
+      21: getfield      #1                  // Field this$0:Lcom_unascribed_ears_Ears;
+      24: invokestatic  #53                 // Method com_unascribed_ears_Ears.access$300:(Lcom_unascribed_ears_Ears;)F
+      27: invokestatic  #70                 // Method com/unascribed/ears/common/EarsCommon.lerpDelta:(DDF)D
+      30: dreturn
+
+  public double getCapeZ();
+    Code:
+       0: aload_0
+       1: getfield      #4                  // Field peer:Ljava/lang/Object;
+       4: checkcast     #5                  // class gs
+       7: getfield      #73                 // Field gs.q:D
+      10: aload_0
+      11: getfield      #4                  // Field peer:Ljava/lang/Object;
+      14: checkcast     #5                  // class gs
+      17: getfield      #74                 // Field gs.t:D
+      20: aload_0
+      21: getfield      #1                  // Field this$0:Lcom_unascribed_ears_Ears;
+      24: invokestatic  #53                 // Method com_unascribed_ears_Ears.access$300:(Lcom_unascribed_ears_Ears;)F
+      27: invokestatic  #70                 // Method com/unascribed/ears/common/EarsCommon.lerpDelta:(DDF)D
+      30: dreturn
+
+  public double getX();
+    Code:
+       0: aload_0
+       1: getfield      #4                  // Field peer:Ljava/lang/Object;
+       4: checkcast     #5                  // class gs
+       7: getfield      #75                 // Field gs.aJ:D
+      10: aload_0
+      11: getfield      #4                  // Field peer:Ljava/lang/Object;
+      14: checkcast     #5                  // class gs
+      17: getfield      #76                 // Field gs.aM:D
+      20: aload_0
+      21: getfield      #1                  // Field this$0:Lcom_unascribed_ears_Ears;
+      24: invokestatic  #53                 // Method com_unascribed_ears_Ears.access$300:(Lcom_unascribed_ears_Ears;)F
+      27: invokestatic  #70                 // Method com/unascribed/ears/common/EarsCommon.lerpDelta:(DDF)D
+      30: dreturn
+
+  public double getY();
+    Code:
+       0: aload_0
+       1: getfield      #4                  // Field peer:Ljava/lang/Object;
+       4: checkcast     #5                  // class gs
+       7: getfield      #77                 // Field gs.aK:D
+      10: aload_0
+      11: getfield      #4                  // Field peer:Ljava/lang/Object;
+      14: checkcast     #5                  // class gs
+      17: getfield      #78                 // Field gs.aN:D
+      20: aload_0
+      21: getfield      #1                  // Field this$0:Lcom_unascribed_ears_Ears;
+      24: invokestatic  #53                 // Method com_unascribed_ears_Ears.access$300:(Lcom_unascribed_ears_Ears;)F
+      27: invokestatic  #70                 // Method com/unascribed/ears/common/EarsCommon.lerpDelta:(DDF)D
+      30: dreturn
+
+  public double getZ();
+    Code:
+       0: aload_0
+       1: getfield      #4                  // Field peer:Ljava/lang/Object;
+       4: checkcast     #5                  // class gs
+       7: getfield      #79                 // Field gs.aL:D
+      10: aload_0
+      11: getfield      #4                  // Field peer:Ljava/lang/Object;
+      14: checkcast     #5                  // class gs
+      17: getfield      #80                 // Field gs.aO:D
+      20: aload_0
+      21: getfield      #1                  // Field this$0:Lcom_unascribed_ears_Ears;
+      24: invokestatic  #53                 // Method com_unascribed_ears_Ears.access$300:(Lcom_unascribed_ears_Ears;)F
+      27: invokestatic  #70                 // Method com/unascribed/ears/common/EarsCommon.lerpDelta:(DDF)D
+      30: dreturn
+
+  protected void doAnchorTo(com.unascribed.ears.common.render.EarsRenderDelegate$BodyPart, java.lang.Object);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: aload_2
+       3: checkcast     #81                 // class ps
+       6: invokevirtual #82                 // Method doAnchorTo:(Lcom/unascribed/ears/common/render/EarsRenderDelegate$BodyPart;Lps;)V
+       9: return
+
+  protected boolean isVisible(java.lang.Object);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: checkcast     #81                 // class ps
+       5: invokevirtual #83                 // Method isVisible:(Lps;)Z
+       8: ireturn
+}

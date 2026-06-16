@@ -249,6 +249,7 @@ def patch_archive(archive):
     model_player_i_fieldref = rewriter.ef(b"net/minecraft/move/ModelPlayer", b"i", b"Lnet/minecraft/move/ModelCapeRenderer;")
     set_current_methodref   = rewriter.em(b"net/minecraft/move/ModelCapeRenderer", b"setCurrent", b"(Lgs;F)V")
     handle_slim_arm_methodref = rewriter.em(b"farn/ears_compat/EarSkinCompat", b"handleSlimArm", b"(Lnet/minecraft/move/ModelPlayer;Lgs;)V")
+    set_current_safe_methodref = rewriter.em(b"farn/ears_compat/EarSkinCompat", b"setAllCapesCurrent", b"(Ljava/lang/Object;Lnet/minecraft/move/ModelPlayer;Lgs;F)V")
 
     gv_class_idx = rewriter.ec(b"gv")
     main_model_str_idx = rewriter.es(b"mainModel")
@@ -260,6 +261,7 @@ def patch_archive(archive):
     print(f"ModelPlayer.i fieldref: #{model_player_i_fieldref}")
     print(f"ModelCapeRenderer.setCurrent methodref: #{set_current_methodref}")
     print(f"EarSkinCompat.handleSlimArm methodref: #{handle_slim_arm_methodref}")
+    print(f"EarSkinCompat.setAllCapesCurrent methodref: #{set_current_safe_methodref}")
     print(f"gv class entry: #{gv_class_idx}")
     print(f"mainModel string entry: #{main_model_str_idx}")
     print(f"e string entry: #{e_str_idx}")
@@ -387,35 +389,35 @@ def patch_archive(archive):
             max_stack, max_locals, code_len = struct.unpack_from('>HHI', attr_body, 0)
             orig_code = attr_body[8 : 8+code_len]
             
-            # Construct injected bytecode sequence (8 + 13 = 21 bytes)
+            # Construct injected bytecode sequence (8 + 11 = 19 bytes)
             # 1. handleSlimArm call (8 bytes)
-            #    aload_0 (0x2A)
-            #    getfield modelBipedMain (0xB4, mbm_fieldref)
-            #    aload_1 (0x2B)
-            #    invokestatic handleSlimArm (0xB8, handle_slim_arm_methodref)
-            # 2. Cape rendering (13 bytes)
-            #    aload_0 (0x2A)
-            #    getfield modelBipedMain (0xB4, mbm_fieldref)
-            #    getfield ModelPlayer.i (0xB4, model_player_i_fieldref)
-            #    aload_1 (0x2B)
-            #    fload 9 (0x17, 0x09)
-            #    invokevirtual setCurrent (0xB6, set_current_methodref)
+            #    aload_0 (0x2A)          1
+            #    getfield modelBipedMain 3
+            #    aload_1 (0x2B)          1
+            #    invokestatic handleSlimArm 3
+            # 2. setAllCapesCurrent call (11 bytes)
+            #    aload_0 (0x2A)  <- this (SmartMovingRender)         1
+            #    aload_0 (0x2A)  <- this (for getfield below)         1
+            #    getfield modelBipedMain (0xB4, mbm_fieldref)         3
+            #    aload_1 (0x2B)  <- player (gs)                       1
+            #    fload 9 (0x17, 0x09)  <- tickDelta (float)           2
+            #    invokestatic setAllCapesCurrent (0xB8, ...)           3
             render_injection = bytes([
-                # handleSlimArm:
+                # handleSlimArm(modelBipedMain, player):
                 0x2A,
                 0xB4, (mbm_fieldref >> 8) & 0xFF, mbm_fieldref & 0xFF,
                 0x2B,
                 0xB8, (handle_slim_arm_methodref >> 8) & 0xFF, handle_slim_arm_methodref & 0xFF,
                 
-                # Cape set:
-                0x2A,
-                0xB4, (mbm_fieldref >> 8) & 0xFF, mbm_fieldref & 0xFF,
-                0xB4, (model_player_i_fieldref >> 8) & 0xFF, model_player_i_fieldref & 0xFF,
-                0x2B,
-                0x17, 0x09,
-                0xB6, (set_current_methodref >> 8) & 0xFF, set_current_methodref & 0xFF
+                # setAllCapesCurrent(this, modelBipedMain, player, tickDelta):
+                0x2A,                                                           # aload_0 (this - Object smr)
+                0x2A,                                                           # aload_0 (this - for getfield)
+                0xB4, (mbm_fieldref >> 8) & 0xFF, mbm_fieldref & 0xFF,         # getfield modelBipedMain
+                0x2B,                                                           # aload_1 (player)
+                0x17, 0x09,                                                     # fload 9 (tickDelta)
+                0xB8, (set_current_safe_methodref >> 8) & 0xFF, set_current_safe_methodref & 0xFF  # invokestatic
             ])
-            assert len(render_injection) == 21
+            assert len(render_injection) == 19  # 8 + 11 = 19 bytes
             
             new_code = render_injection + orig_code
             new_code_len = len(new_code)
@@ -425,7 +427,7 @@ def patch_archive(archive):
             et_len = struct.unpack_from('>H', attr_body, et_pos)[0]
             assert et_len == 0, f"Expected 0 exception handlers in renderPlayer, got {et_len}"
             
-            # Attributes of Code (shift offsets by +21)
+            # Attributes of Code (shift offsets by +18)
             p_sub = et_pos + 2
             sub_ac = struct.unpack_from('>H', attr_body, p_sub)[0]
             p_sub += 2
@@ -441,22 +443,22 @@ def patch_archive(archive):
                     p_lnt = 2
                     for _ in range(lnt_len):
                         start_pc = struct.unpack_from('>H', sa_body, p_lnt)[0]
-                        struct.pack_into('>H', sa_body, p_lnt, start_pc + 21)
+                        struct.pack_into('>H', sa_body, p_lnt, start_pc + 19)
                         p_lnt += 4
-                    print(f"renderPlayer: Shifted LineNumberTable ({lnt_len} entries) by +21")
+                    print(f"renderPlayer: Shifted LineNumberTable ({lnt_len} entries) by +19")
                 elif sa_name == b"LocalVariableTable":
                     lvt_len = struct.unpack_from('>H', sa_body, 0)[0]
                     p_lvt = 2
                     for _ in range(lvt_len):
                         start_pc, length = struct.unpack_from('>HH', sa_body, p_lvt)
                         if start_pc == 0:
-                            struct.pack_into('>H', sa_body, p_lvt + 2, length + 21)
+                            struct.pack_into('>H', sa_body, p_lvt + 2, length + 19)
                         else:
-                            struct.pack_into('>H', sa_body, p_lvt, start_pc + 21)
+                            struct.pack_into('>H', sa_body, p_lvt, start_pc + 19)
                         p_lvt += 10
-                    print(f"renderPlayer: Shifted LocalVariableTable ({lvt_len} entries) by +21")
+                    print(f"renderPlayer: Shifted LocalVariableTable ({lvt_len} entries) by +19")
                 elif sa_name == b"StackMapTable":
-                    shift_smt(sa_body, 0, 21)
+                    shift_smt(sa_body, 0, 19)
                     
                 new_sub_attrs += struct.pack('>HI', sa_name_idx, len(sa_body)) + sa_body
                 p_sub += 6 + sa_len

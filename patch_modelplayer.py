@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import struct, zipfile, io, os, shutil
 
-SM_ZIP = r"D:\Games\Minecraft\instances\Mango Pack Beta 1.7.3 (Volume 2)\.minecraft\mods\SmartMoving for ModLoader.zip"
-BACKUP = SM_ZIP + ".backup_modelplayer"
+TARGET_ZIPS = [
+    r"D:\Games\Minecraft\instances\Mango Pack Beta 1.7.3 (Volume 2)\.minecraft\mods\SmartMoving for ModLoader.zip",
+    r"D:\Games\Minecraft\instances\Mango Pack Beta 1.7.3 (Volume 2)\.minecraft\mods\Armorstand Player fix forge patch.zip",
+]
 ENTRY  = "net/minecraft/move/ModelPlayer.class"
 
 class ClassRewriter:
@@ -178,26 +180,39 @@ class ClassRewriter:
         tail = self.data[self.after_methods_offset:]
         return header + cp_bytes + header_etc + methods_bytes + tail
 
-def main():
-    print(f"Backing up {SM_ZIP}...")
-    if not os.path.exists(BACKUP):
-        shutil.copy2(SM_ZIP, BACKUP)
-        print(f"Backup saved to: {BACKUP}")
-    else:
-        print("Backup already exists.")
+def shift_pc(pc):
+    """Map original bytecode offset to new offset after all patches."""
+    if pc < 6:    return pc
+    elif pc < 324: return pc + 5
+    elif pc < 328: return pc + 9   # inside arm UV replacement
+    elif pc < 346: return pc + 9
+    elif pc < 347: return pc + 12  # inside arm mirror replacement
+    elif pc < 437: return pc + 12
+    elif pc < 440: return pc + 17  # inside leg UV replacement
+    elif pc < 458: return pc + 17
+    elif pc < 459: return pc + 20  # inside leg mirror replacement
+    else:          return pc + 20
 
-    # Read zip
-    with zipfile.ZipFile(SM_ZIP, 'r') as z:
+
+def patch_zip(zip_path):
+    backup = zip_path + ".backup_modelplayer"
+    print(f"\n=== Patching: {zip_path} ===")
+    if not os.path.exists(backup):
+        shutil.copy2(zip_path, backup)
+        print(f"Backup -> {backup}")
+    else:
+        print(f"Using existing backup: {backup}")
+
+    # Always read from backup so script is safely re-runnable
+    with zipfile.ZipFile(backup, 'r') as z:
         class_data = z.read(ENTRY)
 
     rewriter = ClassRewriter(class_data)
 
-    # Find name index of "<init>" and descriptor index of "(FIILnet/minecraft/move/SmartMovingRender;)V"
     init_name_idx = rewriter.get_utf8_idx(b"<init>")
     init_desc_idx = rewriter.get_utf8_idx(b"(FIILnet/minecraft/move/SmartMovingRender;)V")
     assert init_name_idx and init_desc_idx
 
-    # Find constructor method
     target_method = None
     for m in rewriter.methods:
         if m['name_idx'] == init_name_idx and m['desc_idx'] == init_desc_idx:
@@ -207,152 +222,144 @@ def main():
     assert target_method is not None, "ModelPlayer constructor not found"
     print("Found ModelPlayer constructor")
 
-    # Add required new CP entries
-    m_set_height = rewriter.em(b"farn/ears_compat/EarSkinCompat", b"setForceTextureHeight", b"(Z)V")
-    print(f"EarSkinCompat.setForceTextureHeight Methodref: #{m_set_height}")
+    # CP entries — scale-aware helpers in EarSkinCompat
+    ESC = b"farn/ears_compat/EarSkinCompat"
+    m_height_cond = rewriter.em(ESC, b"setForceHeightConditional", b"(ZF)V")
+    m_arm_x       = rewriter.em(ESC, b"getLeftArmX",      b"(F)I")
+    m_arm_y       = rewriter.em(ESC, b"getLeftArmY",      b"(F)I")
+    m_leg_x       = rewriter.em(ESC, b"getLeftLegX",      b"(F)I")
+    m_leg_y       = rewriter.em(ESC, b"getLeftLegY",      b"(F)I")
+    m_mirror      = rewriter.em(ESC, b"getLeftLimbMirror", b"(F)Z")
+    print(f"  setForceHeightConditional: #{m_height_cond}")
+    print(f"  getLeftArmX/Y:             #{m_arm_x}/#{m_arm_y}")
+    print(f"  getLeftLegX/Y:             #{m_leg_x}/#{m_leg_y}")
+    print(f"  getLeftLimbMirror:         #{m_mirror}")
 
-    # Patch the Code attribute of target_method
+    def hi(idx): return (idx >> 8) & 0xFF
+    def lo(idx): return idx & 0xFF
+
     for attr_idx, (name_idx, attr_body) in enumerate(target_method['attrs']):
         name = rewriter.cp[name_idx][1]
         if name == b"Code":
             max_stack, max_locals, code_len = struct.unpack_from('>HHI', attr_body, 0)
             print(f"Original Code: max_stack={max_stack}, max_locals={max_locals}, code_len={code_len}")
-            
+
             orig_code = attr_body[8 : 8+code_len]
-            
-            # Verify the start of the constructor (offset 0-5)
-            # aload_0 (2A), fload_1 (23), fconst_0 (0B), invokespecial #3 (B7 00 03)
-            # invokespecial is B7, followed by 2 bytes
-            assert orig_code[0] == 0x2A and orig_code[1] == 0x23 and orig_code[2] == 0x0B and orig_code[3] == 0xB7
+
+            assert orig_code[0] == 0x2A and orig_code[1] == 0x23 and orig_code[2] == 0x0B and orig_code[3] == 0xB7, \
+                "Constructor start mismatch"
             print("Constructor start verified")
-            
-            # Let's perform the bytecode modifications:
-            # 1. Start injection (4 bytes) at offset 6:
-            #    iconst_1 (0x04)
-            #    invokestatic m_set_height (0xB8, high, low)
-            start_inj = bytes([0x04, 0xB8, (m_set_height >> 8) & 0xFF, m_set_height & 0xFF])
-            
-            # 2. Swap texture offsets of left arm (e) at original offsets 324 and 326:
-            #    Original: bipush 40 (10 28), bipush 16 (10 10)
-            #    Patched:  bipush 32 (10 20), bipush 48 (10 30)
-            #    We check if the original bytes at 324 and 326 are indeed 10 28 and 10 10:
-            assert orig_code[324:328] == bytes([0x10, 0x28, 0x10, 0x10]), f"Left arm offsets mismatch: {orig_code[324:328].hex()}"
-            print("Left arm offsets verified")
-            
-            # 3. Swap texture offsets of left leg (g) at original offsets 437 and 438:
-            #    Original: iconst_0 (0x03), bipush 16 (10 10)
-            #    Patched:  bipush 16 (10 10), bipush 48 (10 30)
-            #    We check if the original bytes at 437 and 438 are indeed 03 and 10 10:
-            assert orig_code[437:440] == bytes([0x03, 0x10, 0x10]), f"Left leg offsets mismatch: {orig_code[437:440].hex()}"
-            print("Left leg offsets verified")
-            
-            # Let's build the modified code array:
-            # Part A: orig_code[0:6] (the super constructor call)
-            part_a = orig_code[0:6]
-            
-            # Part B: our start injection (4 bytes)
-            part_b = start_inj
-            
-            # Part C: orig_code[6:324]
-            part_c = orig_code[6:324]
-            
-            # Part D: patched left arm offsets (4 bytes)
-            part_d = bytes([0x10, 0x20, 0x10, 0x30])
-            
-            # Part E: orig_code[328:437]
-            part_e = orig_code[328:437]
-            
-            # Part F: patched left leg offsets (4 bytes)
-            part_f = bytes([0x10, 0x10, 0x10, 0x30])
-            
-            # Part G: orig_code[440:512]
-            part_g = orig_code[440:512]
-            
-            # Part H: end injection (4 bytes) at end:
-            #    iconst_0 (0x03)
-            #    invokestatic m_set_height (0xB8, high, low)
-            part_h = bytes([0x03, 0xB8, (m_set_height >> 8) & 0xFF, m_set_height & 0xFF])
-            
-            # Part I: the final return (0xB1)
-            part_i = bytes([0xB1])
-            
-            new_code = part_a + part_b + part_c + part_d + part_e + part_f + part_g + part_h + part_i
+
+            assert orig_code[324:328] == bytes([0x10, 0x28, 0x10, 0x10]), \
+                f"Left arm UV mismatch: {orig_code[324:328].hex()}"
+            print("Left arm UV verified (40,16)")
+
+            assert orig_code[346] == 0x04, f"Left arm mirror mismatch: {orig_code[346]:02x}"
+            print("Left arm mirror flag verified (iconst_1)")
+
+            assert orig_code[437:440] == bytes([0x03, 0x10, 0x10]), \
+                f"Left leg UV mismatch: {orig_code[437:440].hex()}"
+            print("Left leg UV verified (0,16)")
+
+            assert orig_code[458] == 0x04, f"Left leg mirror mismatch: {orig_code[458]:02x}"
+            print("Left leg mirror flag verified (iconst_1)")
+
+            # fload_1 = 0x23 (loads scale parameter, local var slot 1)
+            FLOAD1 = 0x23
+
+            # Start injection (5 bytes): setForceHeightConditional(true, scale)
+            part_b = bytes([0x04, FLOAD1, 0xB8, hi(m_height_cond), lo(m_height_cond)])
+
+            # Left arm UV (8 bytes): getLeftArmX(scale), getLeftArmY(scale)
+            part_d = bytes([FLOAD1, 0xB8, hi(m_arm_x), lo(m_arm_x),
+                            FLOAD1, 0xB8, hi(m_arm_y), lo(m_arm_y)])
+
+            # Left arm mirror (4 bytes): getLeftLimbMirror(scale)
+            part_em = bytes([FLOAD1, 0xB8, hi(m_mirror), lo(m_mirror)])
+
+            # Left leg UV (8 bytes): getLeftLegX(scale), getLeftLegY(scale)
+            part_f = bytes([FLOAD1, 0xB8, hi(m_leg_x), lo(m_leg_x),
+                            FLOAD1, 0xB8, hi(m_leg_y), lo(m_leg_y)])
+
+            # Left leg mirror (4 bytes): getLeftLimbMirror(scale)
+            part_fm = bytes([FLOAD1, 0xB8, hi(m_mirror), lo(m_mirror)])
+
+            # End injection (5 bytes): setForceHeightConditional(false, scale)
+            part_h = bytes([0x03, FLOAD1, 0xB8, hi(m_height_cond), lo(m_height_cond)])
+
+            new_code = (
+                orig_code[0:6]    +  # super() call (6)
+                part_b            +  # start injection (5)
+                orig_code[6:324]  +  # body up to left arm UV (318)
+                part_d            +  # left arm UV call (8)
+                orig_code[328:346]+  # arm ctor + field store (18)
+                part_em           +  # left arm mirror call (4)
+                orig_code[347:437]+  # putfield mirror + box + right leg (90)
+                part_f            +  # left leg UV call (8)
+                orig_code[440:458]+  # leg ctor + field store (18)
+                part_fm           +  # left leg mirror call (4)
+                orig_code[459:512]+  # putfield mirror + remaining fields (53)
+                part_h            +  # end injection (5)
+                bytes([0xB1])        # return (1)
+            )
             new_code_len = len(new_code)
-            
-            # Verify new code len is 522
-            assert new_code_len == 522, f"Expected 522, got {new_code_len}"
-            print("New code size is exactly 522 bytes (+9)")
-            
-            # Sub-attributes of Code (LineNumberTable, LocalVariableTable)
-            # No StackMapTable exists for this method
+
+            # 6+5+318+8+18+4+90+8+18+4+53+5+1 = 538
+            assert new_code_len == 538, f"Expected 538, got {new_code_len}"
+            print(f"New code size: {new_code_len} bytes (+{new_code_len - code_len} from original)")
+
             et_pos = 8 + code_len
             et_len = struct.unpack_from('>H', attr_body, et_pos)[0]
-            assert et_len == 0
-            
+            assert et_len == 0, f"Unexpected exception entries: {et_len}"
+
             p_sub = et_pos + 2
             sub_ac = struct.unpack_from('>H', attr_body, p_sub)[0]
             p_sub += 2
-            
+
             new_sub_attrs = bytearray()
             for _ in range(sub_ac):
                 sa_name_idx, sa_len = struct.unpack_from('>HI', attr_body, p_sub)
                 sa_name = rewriter.cp[sa_name_idx][1]
                 sa_body = bytearray(attr_body[p_sub+6 : p_sub+6+sa_len])
-                
+
                 if sa_name == b"LineNumberTable":
                     lnt_len = struct.unpack_from('>H', sa_body, 0)[0]
                     p_lnt = 2
                     for _ in range(lnt_len):
-                        start_pc = struct.unpack_from('>H', sa_body, p_lnt)[0]
-                        if start_pc <= 6:
-                            pass
-                        elif start_pc <= 437:
-                            struct.pack_into('>H', sa_body, p_lnt, start_pc + 4)
-                        else:
-                            struct.pack_into('>H', sa_body, p_lnt, start_pc + 5)
+                        spc = struct.unpack_from('>H', sa_body, p_lnt)[0]
+                        struct.pack_into('>H', sa_body, p_lnt, shift_pc(spc))
                         p_lnt += 4
                     print(f"Shifted LineNumberTable ({lnt_len} entries)")
                 elif sa_name == b"LocalVariableTable":
                     lvt_len = struct.unpack_from('>H', sa_body, 0)[0]
                     p_lvt = 2
                     for _ in range(lvt_len):
-                        start_pc, length = struct.unpack_from('>HH', sa_body, p_lvt)
-                        if start_pc == 0:
-                            struct.pack_into('>H', sa_body, p_lvt + 2, length + 9)
-                        else:
-                            if start_pc <= 6:
-                                if start_pc + length > 437:
-                                    struct.pack_into('>H', sa_body, p_lvt + 2, length + 9)
-                                else:
-                                    struct.pack_into('>H', sa_body, p_lvt + 2, length + 4)
-                            elif start_pc <= 437:
-                                struct.pack_into('>H', sa_body, p_lvt, start_pc + 4)
-                                if start_pc + length > 437:
-                                    struct.pack_into('>H', sa_body, p_lvt + 2, length + 5)
-                            else:
-                                struct.pack_into('>H', sa_body, p_lvt, start_pc + 5)
+                        spc, slen = struct.unpack_from('>HH', sa_body, p_lvt)
+                        new_spc = shift_pc(spc)
+                        # end offset = first byte NOT in range; shift it too
+                        new_end = shift_pc(spc + slen) if spc + slen <= 513 else new_code_len
+                        struct.pack_into('>H', sa_body, p_lvt, new_spc)
+                        struct.pack_into('>H', sa_body, p_lvt + 2, new_end - new_spc)
                         p_lvt += 10
                     print(f"Shifted LocalVariableTable ({lvt_len} entries)")
-                    
+
                 new_sub_attrs += struct.pack('>HI', sa_name_idx, len(sa_body)) + sa_body
                 p_sub += 6 + sa_len
-                
+
             new_attr_body = struct.pack('>HHI', max_stack, max_locals, new_code_len)
             new_attr_body += new_code
             new_attr_body += struct.pack('>H', 0)
             new_attr_body += struct.pack('>H', sub_ac)
             new_attr_body += new_sub_attrs
-            
+
             target_method['attrs'][attr_idx] = (name_idx, new_attr_body)
             break
 
-    # Rebuild class file
     patched_class = rewriter.rebuild()
-    print(f"Patched class file size: {len(patched_class)} (was {len(class_data)})")
+    print(f"Patched class size: {len(patched_class)} (was {len(class_data)})")
 
-    # Write back to zip
     buf = io.BytesIO()
-    with zipfile.ZipFile(SM_ZIP, 'r') as zin:
+    with zipfile.ZipFile(zip_path, 'r') as zin:
         with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED) as zout:
             for item in zin.infolist():
                 if item.filename == ENTRY:
@@ -361,11 +368,9 @@ def main():
                 else:
                     zout.writestr(item, zin.read(item.filename))
 
-    with open(SM_ZIP, 'wb') as f:
+    with open(zip_path, 'wb') as f:
         f.write(buf.getvalue())
 
-    print("\nDone! Verified output with javap:")
-    # Verify with javap
     import subprocess, tempfile
     with tempfile.NamedTemporaryFile(suffix=".class", delete=False) as tmp:
         tmp.write(patched_class)
@@ -373,16 +378,19 @@ def main():
 
     try:
         res = subprocess.run(["javap", "-c", "-p", tmp_name], capture_output=True, text=True)
-        # Find constructor method in output
         lines = res.stdout.splitlines()
-        found_m = False
         for idx, line in enumerate(lines):
             if "public net.minecraft.move.ModelPlayer(float, int, int," in line:
-                found_m = True
-                print("\n".join(lines[idx:idx+45]))
+                print("\n".join(lines[idx:idx+20]))
                 break
     finally:
         os.unlink(tmp_name)
+
+
+def main():
+    for zip_path in TARGET_ZIPS:
+        patch_zip(zip_path)
+    print("\nAll zips patched.")
 
 if __name__ == '__main__':
     main()

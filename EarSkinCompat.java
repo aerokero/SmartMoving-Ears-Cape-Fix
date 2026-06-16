@@ -393,6 +393,88 @@ public class EarSkinCompat {
         }
     }
 
+    /**
+     * Safe wrapper that calls ModelCapeRenderer.setCurrent on ALL ModelPlayer fields
+     * found on the given SmartMovingRender instance (via reflection), ensuring that
+     * accessory models (modelCape, modelEnergyShield, modelMisc) also get the player
+     * reference before rendering, preventing NPE in ModelCapeRenderer.preTransform.
+     */
+    public static void setCurrentSafe(net.minecraft.move.ModelPlayer mp, gs player, float tickDelta) {
+        try {
+            if (mp != null && mp.i != null) {
+                mp.i.setCurrent(player, tickDelta);
+            }
+        } catch (Throwable t) {
+            // Ignore
+        }
+    }
+
+    /**
+     * Called at the start of SmartMovingRender.renderPlayer (via bytecode injection).
+     * Calls setCurrent on ALL ModelCapeRenderer instances found on the SmartMovingRender
+     * and on its IRenderPlayer (RenderPlayerAether) so vanilla Aether model cape renderers
+     * also get the player reference and don't NPE in preTransform.
+     */
+    public static void setAllCapesCurrent(Object smr, net.minecraft.move.ModelPlayer mbm, gs player, float tickDelta) {
+        // 1. Set on modelBipedMain (the SmartMovingRender's main model)
+        setCurrentSafe(mbm, player, tickDelta);
+
+        // 2. Set on all other ModelPlayer fields of SmartMovingRender
+        if (smr != null) {
+            try {
+                for (java.lang.reflect.Field f : smr.getClass().getFields()) {
+                    if (net.minecraft.move.ModelPlayer.class.isAssignableFrom(f.getType())) {
+                        try {
+                            net.minecraft.move.ModelPlayer m = (net.minecraft.move.ModelPlayer) f.get(smr);
+                            if (m != null && m != mbm && m.i != null) {
+                                m.i.setCurrent(player, tickDelta);
+                            }
+                        } catch (Throwable t2) { /* ignore */ }
+                    }
+                }
+            } catch (Throwable t) { /* ignore */ }
+        }
+
+        // 3. Set on the IRenderPlayer's modelCape (the vanilla Aether fh model)
+        // The vanilla Aether RenderPlayerAether.modelCape is a plain fh (ModelBiped)
+        // which also has a ModelCapeRenderer as its .i field.
+        if (smr != null) {
+            try {
+                java.lang.reflect.Field irpField = smr.getClass().getDeclaredField("irp");
+                irpField.setAccessible(true);
+                Object irp = irpField.get(smr);
+                if (irp != null) {
+                    // Try each field of the IRenderPlayer that is an fh (ModelBiped)
+                    for (java.lang.reflect.Field f : irp.getClass().getDeclaredFields()) {
+                        try {
+                            f.setAccessible(true);
+                            Object val = f.get(irp);
+                            if (val instanceof fh) {
+                                fh model = (fh) val;
+                                if (model.i instanceof net.minecraft.move.ModelCapeRenderer) {
+                                    ((net.minecraft.move.ModelCapeRenderer) model.i).setCurrent(player, tickDelta);
+                                }
+                            }
+                        } catch (Throwable t2) { /* ignore */ }
+                    }
+                    // Also try superclass fields
+                    for (java.lang.reflect.Field f : irp.getClass().getSuperclass().getDeclaredFields()) {
+                        try {
+                            f.setAccessible(true);
+                            Object val = f.get(irp);
+                            if (val instanceof fh) {
+                                fh model = (fh) val;
+                                if (model.i instanceof net.minecraft.move.ModelCapeRenderer) {
+                                    ((net.minecraft.move.ModelCapeRenderer) model.i).setCurrent(player, tickDelta);
+                                }
+                            }
+                        } catch (Throwable t2) { /* ignore */ }
+                    }
+                }
+            } catch (Throwable t) { /* ignore */ }
+        }
+    }
+
     public static void restorePlayerSkin(Object renderer, Object player) {
         clearEarsBoundTexture();
         java.io.File logFile = new java.io.File("D:\\Games\\Minecraft\\instances\\Mango Pack Beta 1.7.3 (Volume 2)\\smartmoving\\ears_debug.txt");
