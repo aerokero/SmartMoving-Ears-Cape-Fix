@@ -248,7 +248,8 @@ public class EarSkinCompat {
 
     public static void beforeRenderCape(Object mp) {
         syncEarsModel();
-        if (mp instanceof net.minecraft.move.ModelPlayer || (earsModelPatched && mp == getEarsMyModel())) {
+        boolean shouldPop = (mp == mainModel || (earsModelPatched && mp == getEarsMyModel()));
+        if (shouldPop) {
             try {
                 fh model = (fh) mp;
                 if (model != null && model.i instanceof net.minecraft.move.ModelCapeRenderer) {
@@ -283,7 +284,8 @@ public class EarSkinCompat {
     }
 
     public static void afterRenderCape(Object mp) {
-        if (mp instanceof net.minecraft.move.ModelPlayer || (earsModelPatched && mp == getEarsMyModel())) {
+        boolean shouldPop = (mp == mainModel || (earsModelPatched && mp == getEarsMyModel()));
+        if (shouldPop) {
             org.lwjgl.opengl.GL11.glPushMatrix();
         }
     }
@@ -314,13 +316,6 @@ public class EarSkinCompat {
                 } else {
                     // Move Aether cape back 1 voxel (0.0625f)
                     org.lwjgl.opengl.GL11.glTranslatef(0.0f, 0.0f, 0.0625f);
-                    
-                    if (isSneaking) {
-                        // Move down and forward for crouching body
-                        org.lwjgl.opengl.GL11.glTranslatef(0.0f, 0.08f, -0.06f);
-                        // Rotate to tilt forward
-                        org.lwjgl.opengl.GL11.glRotatef(20.0f, 1.0f, 0.0f, 0.0f);
-                    }
                 }
             }
         } catch (Throwable t) {
