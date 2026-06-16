@@ -1,12 +1,23 @@
 import struct, subprocess, os
 
 def main():
+    classpath_entries = [
+        "minecraft-b1.7.3-client.jar",
+        "SmartMoving for ModLoader",
+        "SmartMoving for ModLoader.zip",
+        "..\\.minecraft\\agent\\ears-vanilla-b1.7.3-1.4.7.jar",
+        "..\\jarmods\\8f49a71e-2bd4-4601-a3db-a769de5d72e3.jar",
+        "..\\.minecraft\\bin\\lwjgl.jar",
+        ".",
+    ]
+    classpath = ";".join(path for path in classpath_entries if os.path.exists(path))
+
     # 1. Compile
     cmd = [
         "javac",
         "-source", "1.8",
         "-target", "1.8",
-        "-cp", "minecraft-b1.7.3-client.jar;SmartMoving for ModLoader.zip;..\\.minecraft\\agent\\ears-vanilla-b1.7.3-1.4.7.jar;..\\jarmods\\8f49a71e-2bd4-4601-a3db-a769de5d72e3.jar;..\\.minecraft\\bin\\lwjgl.jar;.",
+        "-cp", classpath,
         "EarSkinCompat.java"
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)
