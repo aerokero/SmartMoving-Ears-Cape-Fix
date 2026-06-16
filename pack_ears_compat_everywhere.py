@@ -5,7 +5,8 @@ ARCHIVES = [
     r"D:\Games\Minecraft\instances\Mango Pack Beta 1.7.3 (Volume 2)\.minecraft\mods\SmartMoving for ModLoader.zip",
     r"D:\Games\Minecraft\instances\Mango Pack Beta 1.7.3 (Volume 2)\.minecraft\mods\Armorstand Player fix forge patch.zip",
     r"D:\Games\Minecraft\instances\Mango Pack Beta 1.7.3 (Volume 2)\jarmods\6bd56c3c-7688-4947-be61-3b186829a112.jar",
-    r"D:\Games\Minecraft\instances\Mango Pack Beta 1.7.3 (Volume 2)\jarmods\97bbe32f-8e2e-4e99-bd9f-32286239e4c0.jar"
+    r"D:\Games\Minecraft\instances\Mango Pack Beta 1.7.3 (Volume 2)\jarmods\97bbe32f-8e2e-4e99-bd9f-32286239e4c0.jar",
+    r"D:\Games\Minecraft\instances\Mango Pack Beta 1.7.3 (Volume 2)\jarmods\8f6f632d-bfad-4f91-8bda-3de6d74ef1e8.jar"
 ]
 CLASS_PATH = r"d:\Games\Minecraft\instances\Mango Pack Beta 1.7.3 (Volume 2)\smartmoving\farn\ears_compat\EarSkinCompat.class"
 ENTRY = "farn/ears_compat/EarSkinCompat.class"

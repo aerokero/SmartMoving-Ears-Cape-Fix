@@ -1,4 +1,12 @@
 public class EarSkinCompat {
+    public static gs renderingPlayer;
+    public static float renderingTickDelta;
+
+    public static void setRenderingPlayer(gs player, float tickDelta) {
+        renderingPlayer = player;
+        renderingTickDelta = tickDelta;
+    }
+
     public static net.minecraft.move.ModelRotationRenderer slimLeftArm;
     public static net.minecraft.move.ModelRotationRenderer slimRightArm;
     public static net.minecraft.move.ModelRotationRenderer fatLeftArm;
@@ -248,14 +256,13 @@ public class EarSkinCompat {
 
     public static void beforeRenderCape(Object mp) {
         syncEarsModel();
-        boolean shouldPop = (mp == mainModel || (earsModelPatched && mp == getEarsMyModel()));
-        if (shouldPop) {
-            try {
-                fh model = (fh) mp;
-                if (model != null && model.i instanceof net.minecraft.move.ModelCapeRenderer) {
-                    gs player = null;
-                    float tickDelta = 0.0f;
-                    
+        try {
+            fh model = (fh) mp;
+            if (model != null && model.i instanceof net.minecraft.move.ModelCapeRenderer) {
+                gs player = renderingPlayer;
+                float tickDelta = renderingTickDelta;
+                
+                if (player == null) {
                     Class<?> earsClass = Class.forName("com_unascribed_ears_Ears");
                     java.lang.reflect.Field instField = earsClass.getDeclaredField("INST");
                     instField.setAccessible(true);
@@ -271,14 +278,18 @@ public class EarSkinCompat {
                         tickDeltaField.setAccessible(true);
                         tickDelta = tickDeltaField.getFloat(inst);
                     }
-                    
-                    if (player != null) {
-                        ((net.minecraft.move.ModelCapeRenderer) model.i).setCurrent(player, tickDelta);
-                    }
                 }
-            } catch (Throwable t) {
-                // Ignore
+                
+                if (player != null) {
+                    ((net.minecraft.move.ModelCapeRenderer) model.i).setCurrent(player, tickDelta);
+                }
             }
+        } catch (Throwable t) {
+            // Ignore
+        }
+        
+        boolean shouldPop = (mp == mainModel || (earsModelPatched && mp == getEarsMyModel()));
+        if (shouldPop) {
             org.lwjgl.opengl.GL11.glPopMatrix();
         }
     }
