@@ -6,8 +6,11 @@ public class SmartMovingFeatures {
     public static boolean lastWPressed = false;
     public static boolean doubleTapSprintArmed = false;
 
-    public static void updateFOV(Object minecraft) {
+    public static void updateFOV(Object entityPlayer) {
         try {
+            Object minecraft = getMinecraftInstance(entityPlayer);
+            if (minecraft == null) return;
+
             boolean isSprinting = getSprinting(minecraft);
             fovTarget = isSprinting ? 92.0f : 90.0f;
 
@@ -21,6 +24,38 @@ public class SmartMovingFeatures {
         } catch (Throwable t) {
             // Ignore
         }
+    }
+
+    private static Object getMinecraftInstance(Object entityPlayer) {
+        try {
+            Class<?> tk = Class.forName("tk");
+            java.lang.reflect.Field worldField = tk.getDeclaredField("e");
+            worldField.setAccessible(true);
+            Object world = worldField.get(entityPlayer);
+
+            if (world != null) {
+                Class<?> worldClass = world.getClass();
+                java.lang.reflect.Field minecraftField = null;
+                try {
+                    minecraftField = worldClass.getDeclaredField("z");
+                } catch (Throwable t1) {
+                    minecraftField = worldClass.getDeclaredField("minecraft");
+                }
+                minecraftField.setAccessible(true);
+                return minecraftField.get(world);
+            }
+        } catch (Throwable t) {
+            // Try alternative: static access
+            try {
+                Class<?> mc = Class.forName("bao");
+                java.lang.reflect.Field instanceField = mc.getDeclaredField("f");
+                instanceField.setAccessible(true);
+                return instanceField.get(null);
+            } catch (Throwable t2) {
+                // Ignore
+            }
+        }
+        return null;
     }
 
     public static void detectDoubleTapSprint(Object entityPlayer) {
