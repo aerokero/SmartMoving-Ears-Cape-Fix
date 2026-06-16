@@ -139,6 +139,9 @@ public class EarSkinCompat {
 
     public static void syncBeforeRender(net.minecraft.move.ModelPlayer mp) {
         if (mp == null || mainModel == null) return;
+        if (mp == mainModel) {
+            clearEarsBoundTexture();
+        }
         if (mp != mainModel) {
             boolean isAccessory = (mp == modelEnergyShield || mp == modelMisc || mp == modelCape);
             if (isAccessory) {
@@ -305,6 +308,39 @@ public class EarSkinCompat {
         }
     }
 
+    public static void setupAetherCape(Object renderPlayerAether) {
+        try {
+            if (renderPlayerAether != null) {
+                java.lang.reflect.Field renderField = renderPlayerAether.getClass().getField("render");
+                renderField.setAccessible(true);
+                Object render = renderField.get(renderPlayerAether);
+                if (render != null) {
+                    java.lang.reflect.Field smModelCapeField = render.getClass().getField("modelCape");
+                    smModelCapeField.setAccessible(true);
+                    Object smModelCape = smModelCapeField.get(render);
+                    if (smModelCape != null) {
+                        java.lang.reflect.Field iField = smModelCape.getClass().getField("i");
+                        iField.setAccessible(true);
+                        Object mcr = iField.get(smModelCape);
+                        
+                        Class<?> rpaClass = Class.forName("RenderPlayerAether");
+                        java.lang.reflect.Field rpaModelCapeField = rpaClass.getDeclaredField("modelCape");
+                        rpaModelCapeField.setAccessible(true);
+                        Object rpaModelCape = rpaModelCapeField.get(renderPlayerAether);
+                        
+                        if (rpaModelCape != null && mcr != null) {
+                            java.lang.reflect.Field fhIField = rpaModelCape.getClass().getField("i");
+                            fhIField.setAccessible(true);
+                            fhIField.set(rpaModelCape, mcr);
+                        }
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            // Ignore
+        }
+    }
+
     public static void adjustCape(Object capeRenderer, Object player) {
         try {
             gs p = null;
@@ -316,14 +352,14 @@ public class EarSkinCompat {
             
             if (p != null) {
                 // Aether path uses modelCape MCR; vanilla path uses a separate ModelBiped MCR
-                // Vanilla: 2 voxels back (-0.125f), Aether: 1 voxel back (+0.0625f)
+                // Vanilla: 3 voxels back (+0.1875f), Aether: 2 voxels back (+0.125f)
                 boolean isAether = (modelCape != null && modelCape.i == capeRenderer);
                 if (isAether) aetherCapeFrame = renderFrame;
-                org.lwjgl.opengl.GL11.glTranslatef(0.0f, 0.0f, isAether ? 0.0625f : -0.125f);
+                org.lwjgl.opengl.GL11.glTranslatef(0.0f, 0.0f, isAether ? 0.125f : 0.1875f);
 
                 boolean isSneaking = p.t();
                 if (isSneaking) {
-                    org.lwjgl.opengl.GL11.glRotatef(isAether ? 30.0f : -30.0f, 1.0f, 0.0f, 0.0f);
+                    org.lwjgl.opengl.GL11.glRotatef(-30.0f, 1.0f, 0.0f, 0.0f);
                 }
             }
         } catch (Throwable t) {
@@ -358,11 +394,17 @@ public class EarSkinCompat {
     }
 
     public static void restorePlayerSkin(Object renderer, Object player) {
+        clearEarsBoundTexture();
+        java.io.File logFile = new java.io.File("D:\\Games\\Minecraft\\instances\\Mango Pack Beta 1.7.3 (Volume 2)\\smartmoving\\ears_debug.txt");
+        java.io.PrintWriter pw = null;
         try {
+            pw = new java.io.PrintWriter(new java.io.FileWriter(logFile, true));
+            pw.println("restorePlayerSkin called: renderer=" + renderer + ", player=" + player);
             if (renderer != null && player != null) {
                 Class<?> playerClass = Class.forName("gs");
                 if (playerClass.isInstance(player)) {
                     String skinUrl = (String) getFieldValueRecursive(player, "bA");
+                    pw.println("  skinUrl (bA)=" + skinUrl);
                     
                     String fallback = null;
                     Class<?> pCls = player.getClass();
@@ -371,6 +413,7 @@ public class EarSkinCompat {
                             java.lang.reflect.Method qMethod = pCls.getDeclaredMethod("q_");
                             qMethod.setAccessible(true);
                             fallback = (String) qMethod.invoke(player);
+                            pw.println("  fallback (q_)=" + fallback);
                             break;
                         } catch (Throwable t) {
                             pCls = pCls.getSuperclass();
@@ -378,17 +421,72 @@ public class EarSkinCompat {
                     }
                     
                     Class<?> rCls = renderer.getClass();
+                    boolean invoked = false;
                     while (rCls != null) {
                         try {
                             java.lang.reflect.Method m = rCls.getDeclaredMethod("a", String.class, String.class);
                             m.setAccessible(true);
                             m.invoke(renderer, skinUrl, fallback);
+                            invoked = true;
+                            pw.println("  Successfully invoked method 'a' on class " + rCls.getName());
                             break;
                         } catch (Throwable t) {
+                            pw.println("  Failed method 'a' on class " + rCls.getName() + ": " + t.toString());
                             rCls = rCls.getSuperclass();
                         }
                     }
+                    if (!invoked) {
+                        pw.println("  WARNING: method 'a' was never invoked!");
+                    }
+                } else {
+                    pw.println("  player is not an instance of gs! class=" + player.getClass().getName());
                 }
+            }
+        } catch (Throwable t) {
+            if (pw != null) {
+                pw.println("Global exception: " + t.toString());
+                t.printStackTrace(pw);
+            }
+        } finally {
+            if (pw != null) {
+                pw.close();
+            }
+        }
+    }
+
+    private static java.lang.reflect.Field earsBoundField;
+    private static Object earsDelegate;
+    private static boolean earsChecked = false;
+
+    public static void clearEarsBoundTexture() {
+        try {
+            if (!earsChecked) {
+                earsChecked = true;
+                Class<?> earsClass = Class.forName("com_unascribed_ears_Ears");
+                java.lang.reflect.Field instField = earsClass.getDeclaredField("INST");
+                instField.setAccessible(true);
+                Object inst = instField.get(null);
+                if (inst != null) {
+                    java.lang.reflect.Field delegateField = earsClass.getDeclaredField("delegate");
+                    delegateField.setAccessible(true);
+                    earsDelegate = delegateField.get(inst);
+                    if (earsDelegate != null) {
+                        Class<?> c = earsDelegate.getClass();
+                        while (c != null && earsBoundField == null) {
+                            try {
+                                earsBoundField = c.getDeclaredField("bound");
+                            } catch (NoSuchFieldException e) {
+                                c = c.getSuperclass();
+                            }
+                        }
+                        if (earsBoundField != null) {
+                            earsBoundField.setAccessible(true);
+                        }
+                    }
+                }
+            }
+            if (earsBoundField != null && earsDelegate != null) {
+                earsBoundField.set(earsDelegate, null);
             }
         } catch (Throwable t) {
             // Ignore

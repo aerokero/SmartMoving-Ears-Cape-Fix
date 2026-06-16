@@ -177,148 +177,267 @@ class ClassRewriter:
         tail = self.data[self.after_methods_offset:]
         return header + cp_bytes + header_etc + methods_bytes + tail
 
+ARCHIVES = [
+    r"D:\Games\Minecraft\instances\Mango Pack Beta 1.7.3 (Volume 2)\.minecraft\mods\SmartMoving for ModLoader.zip",
+    r"D:\Games\Minecraft\instances\Mango Pack Beta 1.7.3 (Volume 2)\.minecraft\mods\Armorstand Player fix forge patch.zip",
+]
+
+
 def main():
-    print(f"Reading RenderPlayerAether.class from zip: {SM_ZIP}")
-    if not os.path.exists(BACKUP):
-        shutil.copy2(SM_ZIP, BACKUP)
-        print(f"Created backup: {BACKUP}")
-        
-    with zipfile.ZipFile(SM_ZIP, 'r') as z:
-        class_data = z.read(ENTRY)
-        
-    rewriter = ClassRewriter(class_data)
-    
-    # Define restorePlayerSkin method ref
-    restore_skin_methodref = rewriter.em(
-        b"farn/ears_compat/EarSkinCompat", 
-        b"restorePlayerSkin", 
-        b"(Ljava/lang/Object;Ljava/lang/Object;)V"
-    )
-    print(f"EarSkinCompat.restorePlayerSkin methodref: #{restore_skin_methodref}")
-    
-    # Find doEntityPlayerAetherRender_corrected method
-    m_name_idx = rewriter.get_utf8_idx(b"doEntityPlayerAetherRender_corrected")
-    m_desc_idx = rewriter.get_utf8_idx(b"(Lsn;DDDFF)V")
-    assert m_name_idx and m_desc_idx, "Method name or desc not found in CP"
-    
-    target_method = None
-    for m in rewriter.methods:
-        if m['name_idx'] == m_name_idx and m['desc_idx'] == m_desc_idx:
-            target_method = m
-            break
-    assert target_method is not None, "doEntityPlayerAetherRender_corrected method not found"
-    print("Found doEntityPlayerAetherRender_corrected method")
-    
-    for attr_idx, (name_idx, attr_body) in enumerate(target_method['attrs']):
-        name = rewriter.cp[name_idx][1]
-        if name == b"Code":
-            max_stack, max_locals, code_len = struct.unpack_from('>HHI', attr_body, 0)
-            orig_code = attr_body[8 : 8+code_len]
-            print(f"Original method code length: {code_len} bytes")
+    for archive in ARCHIVES:
+        if not os.path.exists(archive):
+            print(f"Archive not found, skipping: {archive}")
+            continue
             
-            # Verify the last byte is return (0xB1) at offset 62
-            assert orig_code[-1] == 0xB1, f"Expected last byte to be return (0xB1), got {orig_code[-1]:02X}"
-            injection_point = code_len - 1
-            
-            # Injection (5 bytes):
-            # aload_0 (0x2A)
-            # aload_1 (0x2B)
-            # invokestatic restorePlayerSkin (0xB8, msb, lsb)
-            # (return 0xB1 is appended after this)
-            injection = bytes([
-                0x2A,
-                0x2B,
-                0xB8, (restore_skin_methodref >> 8) & 0xFF, restore_skin_methodref & 0xFF
-            ])
-            assert len(injection) == 5
-            
-            new_code = orig_code[:injection_point] + injection + bytes([0xB1])
-            new_code_len = len(new_code)
-            print(f"New method code length: {new_code_len} bytes")
-            
-            # Exceptions
-            et_pos = 8 + code_len
-            et_len = struct.unpack_from('>H', attr_body, et_pos)[0]
-            assert et_len == 0, f"Expected 0 exception handlers, got {et_len}"
-            
-            # Sub-attributes of Code (shift offsets > injection_point by +5)
-            p_sub = et_pos + 2
-            sub_ac = struct.unpack_from('>H', attr_body, p_sub)[0]
-            p_sub += 2
-            
-            new_sub_attrs = bytearray()
-            for _ in range(sub_ac):
-                sa_name_idx, sa_len = struct.unpack_from('>HI', attr_body, p_sub)
-                sa_name = rewriter.cp[sa_name_idx][1]
-                sa_body = bytearray(attr_body[p_sub+6 : p_sub+6+sa_len])
+        with zipfile.ZipFile(archive, 'r') as z:
+            if ENTRY not in z.namelist():
+                print(f"RenderPlayerAether.class not found in {archive}, skipping")
+                continue
                 
-                if sa_name == b"LineNumberTable":
-                    lnt_len = struct.unpack_from('>H', sa_body, 0)[0]
-                    p_lnt = 2
-                    for _ in range(lnt_len):
-                        start_pc = struct.unpack_from('>H', sa_body, p_lnt)[0]
-                        if start_pc > injection_point:
-                            struct.pack_into('>H', sa_body, p_lnt, start_pc + 5)
-                        p_lnt += 4
-                    print(f"Shifted LineNumberTable ({lnt_len} entries) by +5")
-                elif sa_name == b"LocalVariableTable":
-                    lvt_len = struct.unpack_from('>H', sa_body, 0)[0]
-                    p_lvt = 2
-                    for _ in range(lvt_len):
-                        start_pc, length = struct.unpack_from('>HH', sa_body, p_lvt)
-                        if start_pc > injection_point:
-                            struct.pack_into('>H', sa_body, p_lvt, start_pc + 5)
-                        else:
-                            if start_pc + length > injection_point:
-                                struct.pack_into('>H', sa_body, p_lvt + 2, length + 5)
-                        p_lvt += 10
-                    print(f"Shifted LocalVariableTable ({lvt_len} entries) by +5")
-                    
-                new_sub_attrs += struct.pack('>HI', sa_name_idx, len(sa_body)) + sa_body
-                p_sub += 6 + sa_len
-                
-            new_attr_body = struct.pack('>HHI', max_stack + 2, max_locals, new_code_len)
-            new_attr_body += new_code
-            new_attr_body += struct.pack('>H', 0)
-            new_attr_body += struct.pack('>H', sub_ac)
-            new_attr_body += new_sub_attrs
-            
-            target_method['attrs'][attr_idx] = (name_idx, new_attr_body)
-            break
-            
-    # Rebuild class file
-    patched_class = rewriter.rebuild()
-    
-    # Write back to zip
-    buf = io.BytesIO()
-    with zipfile.ZipFile(SM_ZIP, 'r') as zin:
-        with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED) as zout:
-            for item in zin.infolist():
-                if item.filename == ENTRY:
-                    zout.writestr(item, patched_class)
-                    print(f"Replaced {ENTRY} in zip")
-                else:
-                    zout.writestr(item, zin.read(item.filename))
-                    
-    with open(SM_ZIP, 'wb') as f:
-        f.write(buf.getvalue())
+        print(f"\nPatching RenderPlayerAether.class in: {archive}")
         
-    print("\nDone! Verify output with javap:")
-    with tempfile.NamedTemporaryFile(suffix=".class", delete=False) as tmp:
-        tmp.write(patched_class)
-        tmp_name = tmp.name
-    try:
-        res = subprocess.run(["javap", "-c", "-p", tmp_name], capture_output=True, text=True)
-        lines = res.stdout.splitlines()
-        found = False
-        for idx, line in enumerate(lines):
-            if "doEntityPlayerAetherRender_corrected" in line:
-                found = True
-                print("\n=== Verified doEntityPlayerAetherRender_corrected ===")
-                print("\n".join(lines[idx:idx+25]))
+        backup = archive + ".backup_rpa"
+        if not os.path.exists(backup):
+            shutil.copy2(archive, backup)
+            print(f"  Created backup: {backup}")
+        else:
+            print(f"  Using existing backup: {backup}")
+            
+        with zipfile.ZipFile(backup, 'r') as z:
+            class_data = z.read(ENTRY)
+            
+        rewriter = ClassRewriter(class_data)
+        
+        # Define restorePlayerSkin method ref
+        restore_skin_methodref = rewriter.em(
+            b"farn/ears_compat/EarSkinCompat", 
+            b"restorePlayerSkin", 
+            b"(Ljava/lang/Object;Ljava/lang/Object;)V"
+        )
+        print(f"  EarSkinCompat.restorePlayerSkin methodref: #{restore_skin_methodref}")
+        
+        # Define setupAetherCape method ref
+        setup_aether_cape_methodref = rewriter.em(
+            b"farn/ears_compat/EarSkinCompat", 
+            b"setupAetherCape", 
+            b"(Ljava/lang/Object;)V"
+        )
+        print(f"  EarSkinCompat.setupAetherCape methodref: #{setup_aether_cape_methodref}")
+        
+        # -----------------
+        # Patch 1: Constructor <init>
+        # -----------------
+        init_name_idx = rewriter.get_utf8_idx(b"<init>")
+        init_desc_idx = rewriter.get_utf8_idx(b"()V")
+        assert init_name_idx and init_desc_idx, "Constructor name or desc not found"
+        
+        init_method = None
+        for m in rewriter.methods:
+            if m['name_idx'] == init_name_idx and m['desc_idx'] == init_desc_idx:
+                init_method = m
                 break
-    finally:
-        os.unlink(tmp_name)
+        assert init_method is not None, "Constructor <init> method not found"
+        print("  Found <init> constructor method")
+        
+        for attr_idx, (name_idx, attr_body) in enumerate(init_method['attrs']):
+            name = rewriter.cp[name_idx][1]
+            if name == b"Code":
+                max_stack, max_locals, code_len = struct.unpack_from('>HHI', attr_body, 0)
+                orig_code = attr_body[8 : 8+code_len]
+                print(f"  Original constructor length: {code_len} bytes")
+                
+                # Verify the last byte is return (0xB1)
+                assert orig_code[-1] == 0xB1, f"Expected last byte to be return (0xB1), got {orig_code[-1]:02X}"
+                injection_point = code_len - 1
+                
+                # Injection (4 bytes):
+                # aload_0 (0x2A)
+                # invokestatic setupAetherCape (0xB8, msb, lsb)
+                injection = bytes([
+                    0x2A,
+                    0xB8, (setup_aether_cape_methodref >> 8) & 0xFF, setup_aether_cape_methodref & 0xFF
+                ])
+                assert len(injection) == 4
+                
+                new_code = orig_code[:injection_point] + injection + bytes([0xB1])
+                new_code_len = len(new_code)
+                
+                # Exceptions
+                et_pos = 8 + code_len
+                et_len = struct.unpack_from('>H', attr_body, et_pos)[0]
+                assert et_len == 0, f"Expected 0 exception handlers in constructor, got {et_len}"
+                
+                # Sub-attributes of Code (shift offsets > injection_point by +4)
+                p_sub = et_pos + 2
+                sub_ac = struct.unpack_from('>H', attr_body, p_sub)[0]
+                p_sub += 2
+                
+                new_sub_attrs = bytearray()
+                for _ in range(sub_ac):
+                    sa_name_idx, sa_len = struct.unpack_from('>HI', attr_body, p_sub)
+                    sa_name = rewriter.cp[sa_name_idx][1]
+                    sa_body = bytearray(attr_body[p_sub+6 : p_sub+6+sa_len])
+                    
+                    if sa_name == b"LineNumberTable":
+                        lnt_len = struct.unpack_from('>H', sa_body, 0)[0]
+                        p_lnt = 2
+                        for _ in range(lnt_len):
+                            start_pc = struct.unpack_from('>H', sa_body, p_lnt)[0]
+                            if start_pc > injection_point:
+                                struct.pack_into('>H', sa_body, p_lnt, start_pc + 4)
+                            p_lnt += 4
+                        print(f"  Constructor: Shifted LineNumberTable ({lnt_len} entries) by +4")
+                    elif sa_name == b"LocalVariableTable":
+                        lvt_len = struct.unpack_from('>H', sa_body, 0)[0]
+                        p_lvt = 2
+                        for _ in range(lvt_len):
+                            start_pc, length = struct.unpack_from('>HH', sa_body, p_lvt)
+                            if start_pc > injection_point:
+                                struct.pack_into('>H', sa_body, p_lvt, start_pc + 4)
+                            else:
+                                if start_pc + length > injection_point:
+                                    struct.pack_into('>H', sa_body, p_lvt + 2, length + 4)
+                            p_lvt += 10
+                        print(f"  Constructor: Shifted LocalVariableTable ({lvt_len} entries) by +4")
+                        
+                    new_sub_attrs += struct.pack('>HI', sa_name_idx, len(sa_body)) + sa_body
+                    p_sub += 6 + sa_len
+                    
+                new_attr_body = struct.pack('>HHI', max_stack + 1, max_locals, new_code_len)
+                new_attr_body += new_code
+                new_attr_body += struct.pack('>H', 0)
+                new_attr_body += struct.pack('>H', sub_ac)
+                new_attr_body += new_sub_attrs
+                
+                init_method['attrs'][attr_idx] = (name_idx, new_attr_body)
+                break
+                
+        # -----------------
+        # Patch 2: doEntityPlayerAetherRender_corrected
+        # -----------------
+        m_name_idx = rewriter.get_utf8_idx(b"doEntityPlayerAetherRender_corrected")
+        m_desc_idx = rewriter.get_utf8_idx(b"(Lsn;DDDFF)V")
+        assert m_name_idx and m_desc_idx, "Method name or desc not found in CP"
+        
+        target_method = None
+        for m in rewriter.methods:
+            if m['name_idx'] == m_name_idx and m['desc_idx'] == m_desc_idx:
+                target_method = m
+                break
+        assert target_method is not None, "doEntityPlayerAetherRender_corrected method not found"
+        print("  Found doEntityPlayerAetherRender_corrected method")
+        
+        for attr_idx, (name_idx, attr_body) in enumerate(target_method['attrs']):
+            name = rewriter.cp[name_idx][1]
+            if name == b"Code":
+                max_stack, max_locals, code_len = struct.unpack_from('>HHI', attr_body, 0)
+                orig_code = attr_body[8 : 8+code_len]
+                print(f"  Original method code length: {code_len} bytes")
+                
+                # Verify the last byte is return (0xB1)
+                assert orig_code[-1] == 0xB1, f"Expected last byte to be return (0xB1), got {orig_code[-1]:02X}"
+                injection_point = code_len - 1
+                
+                # Injection (5 bytes):
+                # aload_0 (0x2A)
+                # aload_1 (0x2B)
+                # invokestatic restorePlayerSkin (0xB8, msb, lsb)
+                # (return 0xB1 is appended after this)
+                injection = bytes([
+                    0x2A,
+                    0x2B,
+                    0xB8, (restore_skin_methodref >> 8) & 0xFF, restore_skin_methodref & 0xFF
+                ])
+                assert len(injection) == 5
+                
+                new_code = orig_code[:injection_point] + injection + bytes([0xB1])
+                new_code_len = len(new_code)
+                print(f"  New method code length: {new_code_len} bytes")
+                
+                # Exceptions
+                et_pos = 8 + code_len
+                et_len = struct.unpack_from('>H', attr_body, et_pos)[0]
+                assert et_len == 0, f"Expected 0 exception handlers, got {et_len}"
+                
+                # Sub-attributes of Code (shift offsets > injection_point by +5)
+                p_sub = et_pos + 2
+                sub_ac = struct.unpack_from('>H', attr_body, p_sub)[0]
+                p_sub += 2
+                
+                new_sub_attrs = bytearray()
+                for _ in range(sub_ac):
+                    sa_name_idx, sa_len = struct.unpack_from('>HI', attr_body, p_sub)
+                    sa_name = rewriter.cp[sa_name_idx][1]
+                    sa_body = bytearray(attr_body[p_sub+6 : p_sub+6+sa_len])
+                    
+                    if sa_name == b"LineNumberTable":
+                        lnt_len = struct.unpack_from('>H', sa_body, 0)[0]
+                        p_lnt = 2
+                        for _ in range(lnt_len):
+                            start_pc = struct.unpack_from('>H', sa_body, p_lnt)[0]
+                            if start_pc > injection_point:
+                                struct.pack_into('>H', sa_body, p_lnt, start_pc + 5)
+                            p_lnt += 4
+                        print(f"  Shifted LineNumberTable ({lnt_len} entries) by +5")
+                    elif sa_name == b"LocalVariableTable":
+                        lvt_len = struct.unpack_from('>H', sa_body, 0)[0]
+                        p_lvt = 2
+                        for _ in range(lvt_len):
+                            start_pc, length = struct.unpack_from('>HH', sa_body, p_lvt)
+                            if start_pc > injection_point:
+                                struct.pack_into('>H', sa_body, p_lvt, start_pc + 5)
+                            else:
+                                if start_pc + length > injection_point:
+                                    struct.pack_into('>H', sa_body, p_lvt + 2, length + 5)
+                            p_lvt += 10
+                        print(f"  Shifted LocalVariableTable ({lvt_len} entries) by +5")
+                        
+                    new_sub_attrs += struct.pack('>HI', sa_name_idx, len(sa_body)) + sa_body
+                    p_sub += 6 + sa_len
+                    
+                new_attr_body = struct.pack('>HHI', max_stack + 2, max_locals, new_code_len)
+                new_attr_body += new_code
+                new_attr_body += struct.pack('>H', 0)
+                new_attr_body += struct.pack('>H', sub_ac)
+                new_attr_body += new_sub_attrs
+                
+                target_method['attrs'][attr_idx] = (name_idx, new_attr_body)
+                break
+                
+        # Rebuild class file
+        patched_class = rewriter.rebuild()
+        
+        # Write back to zip
+        buf = io.BytesIO()
+        with zipfile.ZipFile(archive, 'r') as zin:
+            with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED) as zout:
+                for item in zin.infolist():
+                    if item.filename == ENTRY:
+                        zout.writestr(item, patched_class)
+                        print(f"  Replaced {ENTRY} in zip")
+                    else:
+                        zout.writestr(item, zin.read(item.filename))
+                        
+        with open(archive, 'wb') as f:
+            f.write(buf.getvalue())
+            
+        print("  Done! Verify output with javap:")
+        with tempfile.NamedTemporaryFile(suffix=".class", delete=False) as tmp:
+            tmp.write(patched_class)
+            tmp_name = tmp.name
+        try:
+            res = subprocess.run(["javap", "-c", "-p", tmp_name], capture_output=True, text=True)
+            lines = res.stdout.splitlines()
+            found = False
+            for idx, line in enumerate(lines):
+                if "doEntityPlayerAetherRender_corrected" in line:
+                    found = True
+                    print("   === Verified doEntityPlayerAetherRender_corrected ===")
+                    print("\n".join("    " + l for l in lines[idx:idx+25]))
+                    break
+        finally:
+            os.unlink(tmp_name)
+
 
 if __name__ == '__main__':
     main()

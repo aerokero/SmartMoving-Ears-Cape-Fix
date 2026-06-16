@@ -213,11 +213,32 @@ def shift_smt(data, pos, shift_amount):
         else:
             print(f"WARNING: StackMapTable first frame is not append_frame (type {frame_type}), cannot shift easily!")
 
-def main():
-    print(f"Reading original SmartMovingRender.class from backup: {BACKUP}")
-    assert os.path.exists(BACKUP), "Backup file does not exist!"
+ARCHIVES = [
+    r"D:\Games\Minecraft\instances\Mango Pack Beta 1.7.3 (Volume 2)\.minecraft\mods\SmartMoving for ModLoader.zip",
+    r"D:\Games\Minecraft\instances\Mango Pack Beta 1.7.3 (Volume 2)\.minecraft\mods\Armorstand Player fix forge patch.zip",
+]
+
+
+def patch_archive(archive):
+    if not os.path.exists(archive):
+        print(f"Archive not found, skipping: {archive}")
+        return
+        
+    with zipfile.ZipFile(archive, 'r') as z:
+        if ENTRY not in z.namelist():
+            print(f"SmartMovingRender.class not found in {archive}, skipping")
+            return
+            
+    print(f"\nPatching SmartMovingRender.class in: {archive}")
     
-    with zipfile.ZipFile(BACKUP, 'r') as z:
+    backup = archive + ".backup_smr_cape"
+    if not os.path.exists(backup):
+        shutil.copy2(archive, backup)
+        print(f"  Created backup: {backup}")
+    else:
+        print(f"  Using existing backup: {backup}")
+        
+    with zipfile.ZipFile(backup, 'r') as z:
         class_data = z.read(ENTRY)
 
     rewriter = ClassRewriter(class_data)
@@ -459,19 +480,19 @@ def main():
     # Write back to zip
     # -----------------
     buf = io.BytesIO()
-    with zipfile.ZipFile(SM_ZIP, 'r') as zin:
+    with zipfile.ZipFile(archive, 'r') as zin:
         with zipfile.ZipFile(buf, 'w', compression=zipfile.ZIP_DEFLATED) as zout:
             for item in zin.infolist():
                 if item.filename == ENTRY:
                     zout.writestr(item, patched_class)
-                    print(f"Replaced {ENTRY} in zip")
+                    print(f"  Replaced {ENTRY} in zip")
                 else:
                     zout.writestr(item, zin.read(item.filename))
 
-    with open(SM_ZIP, 'wb') as f:
+    with open(archive, 'wb') as f:
         f.write(buf.getvalue())
 
-    print("\nDone! Verified output with javap:")
+    print("  Done! Verified output with javap:")
     # Verify constructor and renderPlayer with javap
     with tempfile.NamedTemporaryFile(suffix=".class", delete=False) as tmp:
         tmp.write(patched_class)
@@ -486,19 +507,26 @@ def main():
         for idx, line in enumerate(lines):
             if "SmartMovingRender(net.minecraft.move.IRenderPlayer)" in line:
                 found_init = True
-                print("\n=== Verified Constructor ===")
-                print("\n".join(lines[idx:idx+40]))
+                print("   === Verified Constructor ===")
+                print("\n".join("    " + l for l in lines[idx:idx+40]))
                 break
                 
         found_rp = False
         for idx, line in enumerate(lines):
             if "void renderPlayer(gs," in line:
                 found_rp = True
-                print("\n=== Verified renderPlayer ===")
-                print("\n".join(lines[idx:idx+35]))
+                print("   === Verified renderPlayer ===")
+                print("\n".join("    " + l for l in lines[idx:idx+35]))
                 break
     finally:
         os.unlink(tmp_name)
 
+
+def main():
+    for archive in ARCHIVES:
+        patch_archive(archive)
+
+
 if __name__ == '__main__':
     main()
+

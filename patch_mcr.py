@@ -10,9 +10,12 @@ Fix: insert `if (entityplayer == null) return;` at offset 7 of preTransform.
 
 import struct, zipfile, shutil, io, sys, os
 
-SM_ZIP = r"D:\Games\Minecraft\instances\Mango Pack Beta 1.7.3 (Volume 2)\.minecraft\mods\SmartMoving for ModLoader.zip"
+TARGETS = [
+    r"D:\Games\Minecraft\instances\Mango Pack Beta 1.7.3 (Volume 2)\.minecraft\mods\SmartMoving for ModLoader.zip",
+    r"D:\Games\Minecraft\instances\Mango Pack Beta 1.7.3 (Volume 2)\.minecraft\mods\Armorstand Player fix forge patch.zip",
+]
 MCR_ENTRY = "net/minecraft/move/ModelCapeRenderer.class"
-BACKUP    = SM_ZIP + ".backup_mcr"
+
 
 
 def read_u1(data, pos):  return data[pos], pos+1
@@ -220,77 +223,83 @@ def patch_class(data):
 
 
 def main():
-    print(f"Patching {SM_ZIP}")
+    for target in TARGETS:
+        if not os.path.exists(target):
+            print(f"Target not found: {target}")
+            continue
+        print(f"Patching {target}")
 
-    # Backup
-    if not os.path.exists(BACKUP):
-        shutil.copy2(SM_ZIP, BACKUP)
-        print(f"Backup: {BACKUP}")
-    else:
-        print(f"Backup already exists: {BACKUP}")
+        backup = target + ".backup_mcr"
+        # Backup
+        if not os.path.exists(backup):
+            shutil.copy2(target, backup)
+            print(f"Backup: {backup}")
+        else:
+            print(f"Backup already exists: {backup}")
 
-    # Read zip, get class
-    with zipfile.ZipFile(SM_ZIP, 'r') as zin:
-        orig_class = zin.read(MCR_ENTRY)
+        # Read zip, get class
+        with zipfile.ZipFile(target, 'r') as zin:
+            orig_class = zin.read(MCR_ENTRY)
 
-    print(f"Original ModelCapeRenderer.class: {len(orig_class)} bytes")
+        print(f"Original ModelCapeRenderer.class: {len(orig_class)} bytes")
 
-    # Patch
-    patched = patch_class(orig_class)
-    print(f"Patched  ModelCapeRenderer.class: {len(patched)} bytes")
+        # Patch
+        patched = patch_class(orig_class)
+        print(f"Patched  ModelCapeRenderer.class: {len(patched)} bytes")
 
-    # Write back to zip
-    tmp_zip = SM_ZIP + ".tmp"
-    with zipfile.ZipFile(SM_ZIP, 'r') as zin:
-        with zipfile.ZipFile(tmp_zip, 'w', compression=zipfile.ZIP_DEFLATED) as zout:
-            for item in zin.infolist():
-                if item.filename == MCR_ENTRY:
-                    zout.writestr(item, patched)
-                    print(f"  Replaced {MCR_ENTRY} in zip")
-                else:
-                    zout.writestr(item, zin.read(item.filename))
+        # Write back to zip
+        tmp_zip = target + ".tmp"
+        with zipfile.ZipFile(target, 'r') as zin:
+            with zipfile.ZipFile(tmp_zip, 'w', compression=zipfile.ZIP_DEFLATED) as zout:
+                for item in zin.infolist():
+                    if item.filename == MCR_ENTRY:
+                        zout.writestr(item, patched)
+                        print(f"  Replaced {MCR_ENTRY} in zip")
+                    else:
+                        zout.writestr(item, zin.read(item.filename))
 
-    os.replace(tmp_zip, SM_ZIP)
-    print("Done! Verifying with javap...")
+        os.replace(tmp_zip, target)
+        print("Done! Verifying with javap...")
 
-    # Verify
-    import subprocess, tempfile
-    with zipfile.ZipFile(SM_ZIP, 'r') as z:
-        cls = z.read(MCR_ENTRY)
-    with tempfile.NamedTemporaryFile(suffix='.class', delete=False) as f:
-        f.write(cls)
-        fname = f.name
-    result = subprocess.run(
-        ['javap', '-p', '-c', fname],
-        capture_output=True, text=True
-    )
-    os.unlink(fname)
+        # Verify
+        import subprocess, tempfile
+        with zipfile.ZipFile(target, 'r') as z:
+            cls = z.read(MCR_ENTRY)
+        with tempfile.NamedTemporaryFile(suffix='.class', delete=False) as f:
+            f.write(cls)
+            fname = f.name
+        result = subprocess.run(
+            ['javap', '-p', '-c', fname],
+            capture_output=True, text=True
+        )
+        os.unlink(fname)
 
-    # Show preTransform first 20 lines to confirm null check is there
-    lines = result.stdout.splitlines()
-    in_pre = False
-    count = 0
-    for line in lines:
-        if 'preTransform' in line:
-            in_pre = True
-        if in_pre:
-            print(line)
-            count += 1
-            if count > 25:
-                break
+        # Show preTransform first 20 lines to confirm null check is there
+        lines = result.stdout.splitlines()
+        in_pre = False
+        count = 0
+        for line in lines:
+            if 'preTransform' in line:
+                in_pre = True
+            if in_pre:
+                print(line)
+                count += 1
+                if count > 25:
+                    break
 
 
 def apply_pending():
     """Apply a .tmp zip file if present (run after closing Minecraft)."""
-    tmp_zip = SM_ZIP + ".tmp"
-    if os.path.exists(tmp_zip):
-        print(f"Applying pending patch: {tmp_zip}")
-        if os.path.exists(SM_ZIP):
-            os.remove(SM_ZIP)
-        os.rename(tmp_zip, SM_ZIP)
-        print("Done!")
-    else:
-        print("No pending patch found.")
+    for target in TARGETS:
+        tmp_zip = target + ".tmp"
+        if os.path.exists(tmp_zip):
+            print(f"Applying pending patch: {tmp_zip}")
+            if os.path.exists(target):
+                os.remove(target)
+            os.rename(tmp_zip, target)
+            print("Done!")
+        else:
+            print(f"No pending patch found for {target}")
 
 
 if __name__ == '__main__':
