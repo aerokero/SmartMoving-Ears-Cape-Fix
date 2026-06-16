@@ -259,9 +259,15 @@ public class EarSkinCompat {
         try {
             fh model = (fh) mp;
             if (model != null && model.i instanceof net.minecraft.move.ModelCapeRenderer) {
+                // If Aether cape is being rendered, hide vanilla cape
+                boolean isAether = (modelCape != null && mp == modelCape);
+                if (isAether && mainModel != null && mainModel.i != null) {
+                    mainModel.i.h = false;
+                }
+
                 gs player = renderingPlayer;
                 float tickDelta = renderingTickDelta;
-                
+
                 if (player == null) {
                     Class<?> earsClass = Class.forName("com_unascribed_ears_Ears");
                     java.lang.reflect.Field instField = earsClass.getDeclaredField("INST");
@@ -279,7 +285,7 @@ public class EarSkinCompat {
                         tickDelta = tickDeltaField.getFloat(inst);
                     }
                 }
-                
+
                 if (player != null) {
                     ((net.minecraft.move.ModelCapeRenderer) model.i).setCurrent(player, tickDelta);
                 }
@@ -287,7 +293,7 @@ public class EarSkinCompat {
         } catch (Throwable t) {
             // Ignore
         }
-        
+
         boolean shouldPop = (mp == mainModel || (earsModelPatched && mp == getEarsMyModel()));
         if (shouldPop) {
             org.lwjgl.opengl.GL11.glPopMatrix();
@@ -299,34 +305,32 @@ public class EarSkinCompat {
         if (shouldPop) {
             org.lwjgl.opengl.GL11.glPushMatrix();
         }
+
+        // Restore vanilla cape visibility after Aether render
+        boolean isAether = (modelCape != null && mp == modelCape);
+        if (isAether && mainModel != null && mainModel.i != null) {
+            mainModel.i.h = true;
+        }
     }
 
     public static void adjustCape(Object capeRenderer, Object player) {
         try {
+            gs p = null;
             if (player instanceof gs) {
-                gs p = (gs) player;
-                boolean isSneaking = p.al();
-                
-                boolean isVanilla = false;
-                if (mainModel != null && mainModel.i == capeRenderer) {
-                    isVanilla = true;
-                } else if (earsModelPatched && getEarsMyModel() != null && getEarsMyModel().i == capeRenderer) {
-                    isVanilla = true;
-                }
-                
-                if (isVanilla) {
-                    // Move vanilla cape back 2 voxels (0.125f)
-                    org.lwjgl.opengl.GL11.glTranslatef(0.0f, 0.0f, 0.125f);
-                    
-                    if (isSneaking) {
-                        // Move down and forward for crouching body
-                        org.lwjgl.opengl.GL11.glTranslatef(0.0f, 0.08f, -0.06f);
-                        // Rotate to tilt forward
-                        org.lwjgl.opengl.GL11.glRotatef(20.0f, 1.0f, 0.0f, 0.0f);
-                    }
-                } else {
-                    // Move Aether cape back 1 voxel (0.0625f)
-                    org.lwjgl.opengl.GL11.glTranslatef(0.0f, 0.0f, 0.0625f);
+                p = (gs) player;
+            } else if (renderingPlayer != null) {
+                p = renderingPlayer;
+            }
+            
+            if (p != null) {
+                // Aether path uses modelCape MCR; vanilla path uses a separate ModelBiped MCR
+                // Vanilla: 2 voxels back (-0.125f), Aether: 1 voxel back (+0.0625f)
+                boolean isAether = (modelCape != null && modelCape.i == capeRenderer);
+                org.lwjgl.opengl.GL11.glTranslatef(0.0f, 0.0f, isAether ? 0.0625f : -0.125f);
+
+                boolean isSneaking = p.t();
+                if (isSneaking) {
+                    org.lwjgl.opengl.GL11.glRotatef(isAether ? 30.0f : -30.0f, 1.0f, 0.0f, 0.0f);
                 }
             }
         } catch (Throwable t) {
