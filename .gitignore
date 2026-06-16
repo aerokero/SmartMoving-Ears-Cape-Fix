@@ -1,0 +1,9 @@
+*.zip
+*.jar
+*.class
+log.txt
+log2.txt
+__pycache__/
+tmp_smra/
+f1407135-fad1-44b9-93f5-25cf0bc6e99c/
+.claude/

@@ -1,0 +1,316 @@
+public class EarSkinCompat {
+    public static net.minecraft.move.ModelRotationRenderer slimLeftArm;
+    public static net.minecraft.move.ModelRotationRenderer slimRightArm;
+    public static net.minecraft.move.ModelRotationRenderer fatLeftArm;
+    public static net.minecraft.move.ModelRotationRenderer fatRightArm;
+
+    public static net.minecraft.move.ModelPlayer mainModel;
+    public static net.minecraft.move.ModelPlayer modelCape;
+    public static net.minecraft.move.ModelPlayer modelEnergyShield;
+    public static net.minecraft.move.ModelPlayer modelMisc;
+    public static net.minecraft.move.ModelPlayer modelArmorChestplate;
+    public static net.minecraft.move.ModelPlayer modelArmor;
+
+    public static void setForceTextureHeight(boolean val) {
+        try {
+            java.lang.reflect.Field f = Class.forName("com_unascribed_ears_Ears").getDeclaredField("forceTextureHeight");
+            f.setAccessible(true);
+            f.setBoolean(null, val);
+        } catch (Throwable t) {
+            // Ignore
+        }
+    }
+
+    public static void handleSlimArm(net.minecraft.move.ModelPlayer mp, gs player) {
+        try {
+            if (slimLeftArm == null) {
+                // In case init wasn't called yet
+                init(mp, 0.0f);
+            }
+            boolean isSlim = player.l != null && com.unascribed.ears.legacy.LegacyHelper.isSlimArms(player.l);
+            if (isSlim) {
+                mp.e = slimLeftArm;
+                mp.d = slimRightArm;
+                ((fh) mp).e = slimLeftArm;
+                ((fh) mp).d = slimRightArm;
+            } else {
+                mp.e = fatLeftArm;
+                mp.d = fatRightArm;
+                ((fh) mp).e = fatLeftArm;
+                ((fh) mp).d = fatRightArm;
+            }
+
+            // Also keep Ears mod static fields synchronized!
+            try {
+                Class<?> earsCls = Class.forName("com_unascribed_ears_Ears");
+                earsCls.getField("slimLeftArm").set(null, slimLeftArm);
+                earsCls.getField("slimRightArm").set(null, slimRightArm);
+                earsCls.getField("fatLeftArm").set(null, fatLeftArm);
+                earsCls.getField("fatRightArm").set(null, fatRightArm);
+            } catch (Throwable t) {
+                // Ignore
+            }
+
+            // Dynamic cape visibility check
+            if (mp.i != null) {
+                boolean hasEarsCape = false;
+                try {
+                    String skinUrl = com.unascribed.ears.legacy.LegacyHelper.getSkinUrl(player.l);
+                    com.unascribed.ears.api.features.EarsFeatures features =
+                        (com.unascribed.ears.api.features.EarsFeatures)
+                        ((java.util.Map) Class.forName("com_unascribed_ears_Ears").getField("earsSkinFeatures").get(null)).get(skinUrl);
+                    if (features != null && features.capeEnabled) {
+                        hasEarsCape = true;
+                    }
+                } catch (Throwable t) {
+                    // Ignore
+                }
+                boolean hide = mp.isCrawl || mp.isClimb || mp.isSwim || mp.isDive || mp.isCrawlClimb;
+                mp.i.h = !hasEarsCape && !hide;
+            }
+        } catch (Throwable t) {
+            // Ignore
+        }
+    }
+
+    public static void init(net.minecraft.move.ModelPlayer mp, float scale) {
+        // Synchronize all shadowed fields from ModelPlayer to ModelBiped (fh)
+        // so that Ears mod retrieves the animated Smart Moving model parts.
+        ((fh) mp).a = mp.a;
+        ((fh) mp).b = mp.b;
+        ((fh) mp).c = mp.c;
+        ((fh) mp).d = mp.d;
+        ((fh) mp).e = mp.e;
+        ((fh) mp).f = mp.f;
+        ((fh) mp).g = mp.g;
+        ((fh) mp).h = mp.h;
+        ((fh) mp).i = mp.i;
+
+        if (scale > 0.0f) {
+            // This is an armor / shield / misc accessory model.
+            if (scale == 1.25f) {
+                modelEnergyShield = mp;
+            } else if (scale == 0.6f) {
+                modelMisc = mp;
+            } else if (scale == 1.0f) {
+                modelArmorChestplate = mp;
+            } else if (scale == 0.5f) {
+                modelArmor = mp;
+            }
+            // Disable cape rendering to prevent the static duplicate cape inside the body.
+            if (mp.i != null) {
+                mp.i.h = false;
+            }
+            return;
+        }
+
+        // scale == 0.0f: Main player model or Aether modelCape
+        if (mainModel == null) {
+            mainModel = mp;
+        } else {
+            modelCape = mp;
+        }
+
+        if (fatLeftArm == null) {
+            fatLeftArm = mp.e;
+            fatRightArm = mp.d;
+
+            slimLeftArm = new net.minecraft.move.ModelRotationRenderer(32, 48, mp.c);
+            slimLeftArm.a(-1.0f, -2.0f, -2.0f, 3, 12, 4, 0.0f);
+            slimLeftArm.a(5.0f, 2.5f, 0.0f);
+
+            slimRightArm = new net.minecraft.move.ModelRotationRenderer(40, 16, mp.c);
+            slimRightArm.a(-2.0f, -2.0f, -2.0f, 3, 12, 4, 0.0f);
+            slimRightArm.a(-5.0f, 2.5f, 0.0f);
+        }
+    }
+
+    public static void syncBeforeRender(net.minecraft.move.ModelPlayer mp) {
+        if (mp == null || mainModel == null) return;
+        if (mp != mainModel) {
+            boolean isAccessory = (mp == modelEnergyShield || mp == modelMisc || mp == modelCape);
+            if (isAccessory) {
+                boolean hide = mainModel.isCrawl || mainModel.isClimb || mainModel.isSwim || mainModel.isDive || mainModel.isCrawlClimb;
+                if (hide) {
+                    mp.a.h = false;
+                    mp.b.h = false;
+                    mp.c.h = false;
+                    mp.d.h = false;
+                    mp.e.h = false;
+                    mp.f.h = false;
+                    mp.g.h = false;
+                    if (mp.i != null) mp.i.h = false;
+                    return;
+                }
+            }
+            syncModelRotations(mainModel, mp);
+        }
+    }
+
+    private static java.lang.reflect.Field smrField;
+    static {
+        try {
+            smrField = net.minecraft.move.ModelPlayer.class.getDeclaredField("smr");
+            smrField.setAccessible(true);
+        } catch (Throwable t) {
+            // Ignore
+        }
+    }
+
+    public static void syncModelRotations(net.minecraft.move.ModelPlayer main, net.minecraft.move.ModelPlayer other) {
+        if (main == null || other == null) return;
+        boolean isArmor = false;
+        if (smrField != null) {
+            try {
+                net.minecraft.move.SmartMovingRender smr = (net.minecraft.move.SmartMovingRender) smrField.get(other);
+                if (smr != null) {
+                    isArmor = (other == smr.modelArmorChestplate || other == smr.modelArmor);
+                }
+            } catch (Throwable t) {
+                // Ignore
+            }
+        }
+        boolean copyShowModel = !isArmor;
+        copyRotation(main.a, other.a, copyShowModel); // head
+        copyRotation(main.b, other.b, copyShowModel); // headwear
+        copyRotation(main.c, other.c, copyShowModel); // body
+        copyRotation(main.d, other.d, copyShowModel); // rightArm
+        copyRotation(main.e, other.e, copyShowModel); // leftArm
+        copyRotation(main.f, other.f, copyShowModel); // rightLeg
+        copyRotation(main.g, other.g, copyShowModel); // leftLeg
+    }
+
+    private static void copyRotation(net.minecraft.move.ModelRotationRenderer src, net.minecraft.move.ModelRotationRenderer dest, boolean copyShowModel) {
+        if (src == null || dest == null) return;
+        dest.d = src.d; // rotateAngleX
+        dest.e = src.e; // rotateAngleY
+        dest.f = src.f; // rotateAngleZ
+        dest.a = src.a; // rotationPointX
+        dest.b = src.b; // rotationPointY
+        dest.c = src.c; // rotationPointZ
+        dest.g = src.g; // mirror
+        if (copyShowModel) {
+            dest.h = src.h; // showModel
+        }
+        dest.ignoreBase = src.ignoreBase;
+        dest.ignoreBaseRotationX = src.ignoreBaseRotationX;
+        dest.ignoreBaseRotationY = src.ignoreBaseRotationY;
+    }
+
+    private static boolean earsModelPatched = false;
+    private static fh earsMyModel;
+
+    private static Object getFieldValueRecursive(Object obj, String fieldName) {
+        if (obj == null) return null;
+        Class<?> cls = obj.getClass();
+        while (cls != null) {
+            try {
+                java.lang.reflect.Field f = cls.getDeclaredField(fieldName);
+                f.setAccessible(true);
+                return f.get(obj);
+            } catch (Throwable t) {
+                cls = cls.getSuperclass();
+            }
+        }
+        return null;
+    }
+
+    public static fh getEarsMyModel() {
+        if (earsMyModel == null) {
+            try {
+                java.lang.reflect.Field f = Class.forName("com_unascribed_ears_Ears").getDeclaredField("myModel");
+                f.setAccessible(true);
+                earsMyModel = (fh) f.get(null);
+            } catch (Throwable t) {
+                // Ignore
+            }
+        }
+        return earsMyModel;
+    }
+
+    public static void syncEarsModel() {
+        if (!earsModelPatched) {
+            try {
+                fh myModel = getEarsMyModel();
+                if (myModel != null) {
+                    if (!(myModel.i instanceof net.minecraft.move.ModelCapeRenderer)) {
+                        if (mainModel != null && mainModel.i != null) {
+                            myModel.i = mainModel.i;
+                            earsModelPatched = true;
+                        }
+                    }
+                }
+            } catch (Throwable t) {
+                // Ignore
+            }
+        }
+    }
+
+    public static void beforeRenderCape(Object mp) {
+        syncEarsModel();
+        if (mp == mainModel || (earsModelPatched && mp == getEarsMyModel())) {
+            try {
+                fh model = (fh) mp;
+                if (model != null && model.i instanceof net.minecraft.move.ModelCapeRenderer) {
+                    gs player = null;
+                    float tickDelta = 0.0f;
+                    
+                    Class<?> earsClass = Class.forName("com_unascribed_ears_Ears");
+                    java.lang.reflect.Field instField = earsClass.getDeclaredField("INST");
+                    instField.setAccessible(true);
+                    Object inst = instField.get(null);
+                    if (inst != null) {
+                        java.lang.reflect.Field delegateField = earsClass.getDeclaredField("delegate");
+                        delegateField.setAccessible(true);
+                        Object delegate = delegateField.get(inst);
+                        if (delegate != null) {
+                            player = (gs) getFieldValueRecursive(delegate, "peer");
+                        }
+                        java.lang.reflect.Field tickDeltaField = earsClass.getDeclaredField("tickDelta");
+                        tickDeltaField.setAccessible(true);
+                        tickDelta = tickDeltaField.getFloat(inst);
+                    }
+                    
+                    if (player != null) {
+                        ((net.minecraft.move.ModelCapeRenderer) model.i).setCurrent(player, tickDelta);
+                    }
+                }
+            } catch (Throwable t) {
+                // Ignore
+            }
+            org.lwjgl.opengl.GL11.glPopMatrix();
+        }
+    }
+
+    public static void afterRenderCape(Object mp) {
+        if (mp == mainModel || (earsModelPatched && mp == getEarsMyModel())) {
+            org.lwjgl.opengl.GL11.glPushMatrix();
+        }
+    }
+
+    public static int getLeftArmX(float scale) {
+        return scale > 0.0f ? 40 : 32;
+    }
+
+    public static int getLeftArmY(float scale) {
+        return scale > 0.0f ? 16 : 48;
+    }
+
+    public static int getLeftLegX(float scale) {
+        return scale > 0.0f ? 0 : 16;
+    }
+
+    public static int getLeftLegY(float scale) {
+        return scale > 0.0f ? 16 : 48;
+    }
+
+    public static boolean getLeftLimbMirror(float scale) {
+        return scale > 0.0f;
+    }
+
+    public static void setForceHeightConditional(boolean val, float scale) {
+        if (scale == 0.0f) {
+            setForceTextureHeight(val);
+        }
+    }
+}

@@ -1,0 +1,730 @@
+﻿Compiled from "SourceFile"
+public class gv extends bw {
+  protected ko e;
+
+  protected ko f;
+
+  public gv(ko, float);
+    Code:
+       0: aload_0
+       1: invokespecial #54                 // Method bw."<init>":()V
+       4: aload_0
+       5: aload_1
+       6: putfield      #32                 // Field e:Lko;
+       9: aload_0
+      10: fload_2
+      11: putfield      #31                 // Field c:F
+      14: return
+
+  public void a(ko);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: putfield      #33                 // Field f:Lko;
+       5: return
+
+  public void a(ls, double, double, double, float, float);
+    Code:
+       0: invokestatic  #94                 // Method org/lwjgl/opengl/GL11.glPushMatrix:()V
+       3: sipush        2884
+       6: invokestatic  #90                 // Method org/lwjgl/opengl/GL11.glDisable:(I)V
+       9: aload_0
+      10: getfield      #32                 // Field e:Lko;
+      13: aload_0
+      14: aload_1
+      15: fload         9
+      17: invokevirtual #69                 // Method d:(Lls;F)F
+      20: putfield      #34                 // Field ko.m:F
+      23: aload_0
+      24: getfield      #33                 // Field f:Lko;
+      27: ifnull        44
+      30: aload_0
+      31: getfield      #33                 // Field f:Lko;
+      34: aload_0
+      35: getfield      #32                 // Field e:Lko;
+      38: getfield      #34                 // Field ko.m:F
+      41: putfield      #34                 // Field ko.m:F
+      44: aload_0
+      45: getfield      #32                 // Field e:Lko;
+      48: aload_1
+      49: invokevirtual #77                 // Method ls.al:()Z
+      52: putfield      #35                 // Field ko.n:Z
+      55: aload_0
+      56: getfield      #33                 // Field f:Lko;
+      59: ifnull        76
+      62: aload_0
+      63: getfield      #33                 // Field f:Lko;
+      66: aload_0
+      67: getfield      #32                 // Field e:Lko;
+      70: getfield      #35                 // Field ko.n:Z
+      73: putfield      #35                 // Field ko.n:Z
+      76: aload_1
+      77: getfield      #37                 // Field ls.I:F
+      80: aload_1
+      81: getfield      #36                 // Field ls.H:F
+      84: aload_1
+      85: getfield      #37                 // Field ls.I:F
+      88: fsub
+      89: fload         9
+      91: fmul
+      92: fadd
+      93: fstore        10
+      95: aload_1
+      96: getfield      #41                 // Field ls.aU:F
+      99: aload_1
+     100: getfield      #39                 // Field ls.aS:F
+     103: aload_1
+     104: getfield      #41                 // Field ls.aU:F
+     107: fsub
+     108: fload         9
+     110: fmul
+     111: fadd
+     112: fstore        11
+     114: aload_1
+     115: getfield      #42                 // Field ls.aV:F
+     118: aload_1
+     119: getfield      #40                 // Field ls.aT:F
+     122: aload_1
+     123: getfield      #42                 // Field ls.aV:F
+     126: fsub
+     127: fload         9
+     129: fmul
+     130: fadd
+     131: fstore        12
+     133: aload_0
+     134: aload_1
+     135: dload_2
+     136: dload         4
+     138: dload         6
+     140: invokevirtual #65                 // Method b:(Lls;DDD)V
+     143: aload_0
+     144: aload_1
+     145: fload         9
+     147: invokevirtual #68                 // Method c:(Lls;F)F
+     150: fstore        13
+     152: aload_0
+     153: aload_1
+     154: fload         13
+     156: fload         10
+     158: fload         9
+     160: invokevirtual #62                 // Method a:(Lls;FFF)V
+     163: ldc           #7                  // float 0.0625f
+     165: fstore        14
+     167: ldc           #1                  // int 32826
+     169: invokestatic  #91                 // Method org/lwjgl/opengl/GL11.glEnable:(I)V
+     172: ldc           #4                  // float -1.0f
+     174: ldc           #4                  // float -1.0f
+     176: fconst_1
+     177: invokestatic  #96                 // Method org/lwjgl/opengl/GL11.glScalef:(FFF)V
+     180: aload_0
+     181: aload_1
+     182: fload         9
+     184: invokevirtual #60                 // Method a:(Lls;F)V
+     187: fconst_0
+     188: ldc           #3                  // float -24.0f
+     190: fload         14
+     192: fmul
+     193: ldc           #5                  // float 0.0078125f
+     195: fsub
+     196: fconst_0
+     197: invokestatic  #97                 // Method org/lwjgl/opengl/GL11.glTranslatef:(FFF)V
+     200: aload_1
+     201: getfield      #45                 // Field ls.ak:F
+     204: aload_1
+     205: getfield      #46                 // Field ls.al:F
+     208: aload_1
+     209: getfield      #45                 // Field ls.ak:F
+     212: fsub
+     213: fload         9
+     215: fmul
+     216: fadd
+     217: fstore        15
+     219: aload_1
+     220: getfield      #47                 // Field ls.am:F
+     223: aload_1
+     224: getfield      #46                 // Field ls.al:F
+     227: fconst_1
+     228: fload         9
+     230: fsub
+     231: fmul
+     232: fsub
+     233: fstore        16
+     235: fload         15
+     237: fconst_1
+     238: fcmpl
+     239: ifle          245
+     242: fconst_1
+     243: fstore        15
+     245: aload_0
+     246: aload_1
+     247: getfield      #48                 // Field ls.bA:Ljava/lang/String;
+     250: aload_1
+     251: invokevirtual #80                 // Method ls.q_:()Ljava/lang/String;
+     254: invokevirtual #56                 // Method a:(Ljava/lang/String;Ljava/lang/String;)Z
+     257: pop
+     258: sipush        3008
+     261: invokestatic  #91                 // Method org/lwjgl/opengl/GL11.glEnable:(I)V
+     264: aload_0
+     265: getfield      #32                 // Field e:Lko;
+     268: aload_1
+     269: fload         16
+     271: fload         15
+     273: fload         9
+     275: invokevirtual #75                 // Method ko.a:(Lls;FFF)V
+     278: aload_0
+     279: getfield      #32                 // Field e:Lko;
+     282: fload         16
+     284: fload         15
+     286: fload         13
+     288: fload         11
+     290: fload         10
+     292: fsub
+     293: fload         12
+     295: fload         14
+     297: invokevirtual #74                 // Method ko.a:(FFFFFF)V
+     300: iconst_0
+     301: istore        17
+     303: iload         17
+     305: iconst_4
+     306: if_icmpge     361
+     309: aload_0
+     310: aload_1
+     311: iload         17
+     313: fload         9
+     315: invokevirtual #63                 // Method a:(Lls;IF)Z
+     318: ifeq          355
+     321: aload_0
+     322: getfield      #33                 // Field f:Lko;
+     325: fload         16
+     327: fload         15
+     329: fload         13
+     331: fload         11
+     333: fload         10
+     335: fsub
+     336: fload         12
+     338: fload         14
+     340: invokevirtual #74                 // Method ko.a:(FFFFFF)V
+     343: sipush        3042
+     346: invokestatic  #90                 // Method org/lwjgl/opengl/GL11.glDisable:(I)V
+     349: sipush        3008
+     352: invokestatic  #91                 // Method org/lwjgl/opengl/GL11.glEnable:(I)V
+     355: iinc          17, 1
+     358: goto          303
+     361: aload_0
+     362: aload_1
+     363: fload         9
+     365: invokevirtual #66                 // Method b:(Lls;F)V
+     368: aload_1
+     369: fload         9
+     371: invokevirtual #76                 // Method ls.a:(F)F
+     374: fstore        17
+     376: aload_0
+     377: aload_1
+     378: fload         17
+     380: fload         9
+     382: invokevirtual #61                 // Method a:(Lls;FF)I
+     385: istore        18
+     387: iload         18
+     389: bipush        24
+     391: ishr
+     392: sipush        255
+     395: iand
+     396: ifgt          413
+     399: aload_1
+     400: getfield      #43                 // Field ls.aa:I
+     403: ifgt          413
+     406: aload_1
+     407: getfield      #44                 // Field ls.ad:I
+     410: ifle          735
+     413: sipush        3553
+     416: invokestatic  #90                 // Method org/lwjgl/opengl/GL11.glDisable:(I)V
+     419: sipush        3008
+     422: invokestatic  #90                 // Method org/lwjgl/opengl/GL11.glDisable:(I)V
+     425: sipush        3042
+     428: invokestatic  #91                 // Method org/lwjgl/opengl/GL11.glEnable:(I)V
+     431: sipush        770
+     434: sipush        771
+     437: invokestatic  #86                 // Method org/lwjgl/opengl/GL11.glBlendFunc:(II)V
+     440: sipush        514
+     443: invokestatic  #88                 // Method org/lwjgl/opengl/GL11.glDepthFunc:(I)V
+     446: aload_1
+     447: getfield      #43                 // Field ls.aa:I
+     450: ifgt          460
+     453: aload_1
+     454: getfield      #44                 // Field ls.ad:I
+     457: ifle          549
+     460: fload         17
+     462: fconst_0
+     463: fconst_0
+     464: ldc           #9                  // float 0.4f
+     466: invokestatic  #87                 // Method org/lwjgl/opengl/GL11.glColor4f:(FFFF)V
+     469: aload_0
+     470: getfield      #32                 // Field e:Lko;
+     473: fload         16
+     475: fload         15
+     477: fload         13
+     479: fload         11
+     481: fload         10
+     483: fsub
+     484: fload         12
+     486: fload         14
+     488: invokevirtual #74                 // Method ko.a:(FFFFFF)V
+     491: iconst_0
+     492: istore        19
+     494: iload         19
+     496: iconst_4
+     497: if_icmpge     549
+     500: aload_0
+     501: aload_1
+     502: iload         19
+     504: fload         9
+     506: invokevirtual #67                 // Method b:(Lls;IF)Z
+     509: ifeq          543
+     512: fload         17
+     514: fconst_0
+     515: fconst_0
+     516: ldc           #9                  // float 0.4f
+     518: invokestatic  #87                 // Method org/lwjgl/opengl/GL11.glColor4f:(FFFF)V
+     521: aload_0
+     522: getfield      #33                 // Field f:Lko;
+     525: fload         16
+     527: fload         15
+     529: fload         13
+     531: fload         11
+     533: fload         10
+     535: fsub
+     536: fload         12
+     538: fload         14
+     540: invokevirtual #74                 // Method ko.a:(FFFFFF)V
+     543: iinc          19, 1
+     546: goto          494
+     549: iload         18
+     551: bipush        24
+     553: ishr
+     554: sipush        255
+     557: iand
+     558: ifle          711
+     561: iload         18
+     563: bipush        16
+     565: ishr
+     566: sipush        255
+     569: iand
+     570: i2f
+     571: ldc           #15                 // float 255.0f
+     573: fdiv
+     574: fstore        19
+     576: iload         18
+     578: bipush        8
+     580: ishr
+     581: sipush        255
+     584: iand
+     585: i2f
+     586: ldc           #15                 // float 255.0f
+     588: fdiv
+     589: fstore        20
+     591: iload         18
+     593: sipush        255
+     596: iand
+     597: i2f
+     598: ldc           #15                 // float 255.0f
+     600: fdiv
+     601: fstore        21
+     603: iload         18
+     605: bipush        24
+     607: ishr
+     608: sipush        255
+     611: iand
+     612: i2f
+     613: ldc           #15                 // float 255.0f
+     615: fdiv
+     616: fstore        22
+     618: fload         19
+     620: fload         20
+     622: fload         21
+     624: fload         22
+     626: invokestatic  #87                 // Method org/lwjgl/opengl/GL11.glColor4f:(FFFF)V
+     629: aload_0
+     630: getfield      #32                 // Field e:Lko;
+     633: fload         16
+     635: fload         15
+     637: fload         13
+     639: fload         11
+     641: fload         10
+     643: fsub
+     644: fload         12
+     646: fload         14
+     648: invokevirtual #74                 // Method ko.a:(FFFFFF)V
+     651: iconst_0
+     652: istore        23
+     654: iload         23
+     656: iconst_4
+     657: if_icmpge     711
+     660: aload_0
+     661: aload_1
+     662: iload         23
+     664: fload         9
+     666: invokevirtual #67                 // Method b:(Lls;IF)Z
+     669: ifeq          705
+     672: fload         19
+     674: fload         20
+     676: fload         21
+     678: fload         22
+     680: invokestatic  #87                 // Method org/lwjgl/opengl/GL11.glColor4f:(FFFF)V
+     683: aload_0
+     684: getfield      #33                 // Field f:Lko;
+     687: fload         16
+     689: fload         15
+     691: fload         13
+     693: fload         11
+     695: fload         10
+     697: fsub
+     698: fload         12
+     700: fload         14
+     702: invokevirtual #74                 // Method ko.a:(FFFFFF)V
+     705: iinc          23, 1
+     708: goto          654
+     711: sipush        515
+     714: invokestatic  #88                 // Method org/lwjgl/opengl/GL11.glDepthFunc:(I)V
+     717: sipush        3042
+     720: invokestatic  #90                 // Method org/lwjgl/opengl/GL11.glDisable:(I)V
+     723: sipush        3008
+     726: invokestatic  #91                 // Method org/lwjgl/opengl/GL11.glEnable:(I)V
+     729: sipush        3553
+     732: invokestatic  #91                 // Method org/lwjgl/opengl/GL11.glEnable:(I)V
+     735: ldc           #1                  // int 32826
+     737: invokestatic  #90                 // Method org/lwjgl/opengl/GL11.glDisable:(I)V
+     740: goto          750
+     743: astore        10
+     745: aload         10
+     747: invokevirtual #71                 // Method java/lang/Exception.printStackTrace:()V
+     750: sipush        2884
+     753: invokestatic  #91                 // Method org/lwjgl/opengl/GL11.glEnable:(I)V
+     756: invokestatic  #93                 // Method org/lwjgl/opengl/GL11.glPopMatrix:()V
+     759: aload_0
+     760: aload_1
+     761: dload_2
+     762: dload         4
+     764: dload         6
+     766: invokevirtual #58                 // Method a:(Lls;DDD)V
+     769: return
+    Exception table:
+       from    to  target type
+          76   740   743   Class java/lang/Exception
+
+  protected void b(ls, double, double, double);
+    Code:
+       0: dload_2
+       1: d2f
+       2: dload         4
+       4: d2f
+       5: dload         6
+       7: d2f
+       8: invokestatic  #97                 // Method org/lwjgl/opengl/GL11.glTranslatef:(FFF)V
+      11: return
+
+  protected void a(ls, float, float, float);
+    Code:
+       0: ldc           #14                 // float 180.0f
+       2: fload_3
+       3: fsub
+       4: fconst_0
+       5: fconst_1
+       6: fconst_0
+       7: invokestatic  #95                 // Method org/lwjgl/opengl/GL11.glRotatef:(FFFF)V
+      10: aload_1
+      11: getfield      #44                 // Field ls.ad:I
+      14: ifle          66
+      17: aload_1
+      18: getfield      #44                 // Field ls.ad:I
+      21: i2f
+      22: fload         4
+      24: fadd
+      25: fconst_1
+      26: fsub
+      27: ldc           #12                 // float 20.0f
+      29: fdiv
+      30: ldc           #10                 // float 1.6f
+      32: fmul
+      33: fstore        5
+      35: fload         5
+      37: invokestatic  #70                 // Method in.c:(F)F
+      40: fstore        5
+      42: fload         5
+      44: fconst_1
+      45: fcmpl
+      46: ifle          52
+      49: fconst_1
+      50: fstore        5
+      52: fload         5
+      54: aload_0
+      55: aload_1
+      56: invokevirtual #57                 // Method a:(Lls;)F
+      59: fmul
+      60: fconst_0
+      61: fconst_0
+      62: fconst_1
+      63: invokestatic  #95                 // Method org/lwjgl/opengl/GL11.glRotatef:(FFFF)V
+      66: return
+
+  protected float d(ls, float);
+    Code:
+       0: aload_1
+       1: fload_2
+       2: invokevirtual #78                 // Method ls.d:(F)F
+       5: freturn
+
+  protected float c(ls, float);
+    Code:
+       0: aload_1
+       1: getfield      #49                 // Field ls.bt:I
+       4: i2f
+       5: fload_2
+       6: fadd
+       7: freturn
+
+  protected void b(ls, float);
+    Code:
+       0: return
+
+  protected boolean b(ls, int, float);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: iload_2
+       3: fload_3
+       4: invokevirtual #63                 // Method a:(Lls;IF)Z
+       7: ireturn
+
+  protected boolean a(ls, int, float);
+    Code:
+       0: iconst_0
+       1: ireturn
+
+  protected float a(ls);
+    Code:
+       0: ldc           #13                 // float 90.0f
+       2: freturn
+
+  protected int a(ls, float, float);
+    Code:
+       0: iconst_0
+       1: ireturn
+
+  protected void a(ls, float);
+    Code:
+       0: return
+
+  protected void a(ls, double, double, double);
+    Code:
+       0: invokestatic  #81                 // Method net/minecraft/client/Minecraft.w:()Z
+       3: ifeq          25
+       6: aload_0
+       7: aload_1
+       8: aload_1
+       9: getfield      #38                 // Field ls.aD:I
+      12: invokestatic  #72                 // Method java/lang/Integer.toString:(I)Ljava/lang/String;
+      15: dload_2
+      16: dload         4
+      18: dload         6
+      20: bipush        64
+      22: invokevirtual #64                 // Method a:(Lls;Ljava/lang/String;DDDI)V
+      25: return
+
+  protected void a(ls, java.lang.String, double, double, double, int);
+    Code:
+       0: aload_1
+       1: aload_0
+       2: getfield      #30                 // Field b:Lth;
+       5: getfield      #51                 // Field th.h:Lls;
+       8: invokevirtual #79                 // Method ls.f:(Lsn;)F
+      11: fstore        10
+      13: fload         10
+      15: iload         9
+      17: i2f
+      18: fcmpl
+      19: ifle          23
+      22: return
+      23: aload_0
+      24: invokevirtual #55                 // Method a:()Lsj;
+      27: astore        11
+      29: ldc           #10                 // float 1.6f
+      31: fstore        12
+      33: ldc           #6                  // float 0.016666668f
+      35: fload         12
+      37: fmul
+      38: fstore        13
+      40: invokestatic  #94                 // Method org/lwjgl/opengl/GL11.glPushMatrix:()V
+      43: dload_3
+      44: d2f
+      45: fconst_0
+      46: fadd
+      47: dload         5
+      49: d2f
+      50: ldc           #11                 // float 2.3f
+      52: fadd
+      53: dload         7
+      55: d2f
+      56: invokestatic  #97                 // Method org/lwjgl/opengl/GL11.glTranslatef:(FFF)V
+      59: fconst_0
+      60: fconst_1
+      61: fconst_0
+      62: invokestatic  #92                 // Method org/lwjgl/opengl/GL11.glNormal3f:(FFF)V
+      65: aload_0
+      66: getfield      #30                 // Field b:Lth;
+      69: getfield      #52                 // Field th.i:F
+      72: fneg
+      73: fconst_0
+      74: fconst_1
+      75: fconst_0
+      76: invokestatic  #95                 // Method org/lwjgl/opengl/GL11.glRotatef:(FFFF)V
+      79: aload_0
+      80: getfield      #30                 // Field b:Lth;
+      83: getfield      #53                 // Field th.j:F
+      86: fconst_1
+      87: fconst_0
+      88: fconst_0
+      89: invokestatic  #95                 // Method org/lwjgl/opengl/GL11.glRotatef:(FFFF)V
+      92: fload         13
+      94: fneg
+      95: fload         13
+      97: fneg
+      98: fload         13
+     100: invokestatic  #96                 // Method org/lwjgl/opengl/GL11.glScalef:(FFF)V
+     103: sipush        2896
+     106: invokestatic  #90                 // Method org/lwjgl/opengl/GL11.glDisable:(I)V
+     109: iconst_0
+     110: invokestatic  #89                 // Method org/lwjgl/opengl/GL11.glDepthMask:(Z)V
+     113: sipush        2929
+     116: invokestatic  #90                 // Method org/lwjgl/opengl/GL11.glDisable:(I)V
+     119: sipush        3042
+     122: invokestatic  #91                 // Method org/lwjgl/opengl/GL11.glEnable:(I)V
+     125: sipush        770
+     128: sipush        771
+     131: invokestatic  #86                 // Method org/lwjgl/opengl/GL11.glBlendFunc:(II)V
+     134: getstatic     #50                 // Field nw.a:Lnw;
+     137: astore        14
+     139: iconst_0
+     140: istore        15
+     142: aload_2
+     143: ldc           #16                 // String deadmau5
+     145: invokevirtual #73                 // Method java/lang/String.equals:(Ljava/lang/Object;)Z
+     148: ifeq          155
+     151: bipush        -10
+     153: istore        15
+     155: sipush        3553
+     158: invokestatic  #90                 // Method org/lwjgl/opengl/GL11.glDisable:(I)V
+     161: aload         14
+     163: invokevirtual #85                 // Method nw.b:()V
+     166: aload         11
+     168: aload_2
+     169: invokevirtual #98                 // Method sj.a:(Ljava/lang/String;)I
+     172: iconst_2
+     173: idiv
+     174: istore        16
+     176: aload         14
+     178: fconst_0
+     179: fconst_0
+     180: fconst_0
+     181: ldc           #8                  // float 0.25f
+     183: invokevirtual #84                 // Method nw.a:(FFFF)V
+     186: aload         14
+     188: iload         16
+     190: ineg
+     191: iconst_1
+     192: isub
+     193: i2d
+     194: iconst_m1
+     195: iload         15
+     197: iadd
+     198: i2d
+     199: dconst_0
+     200: invokevirtual #83                 // Method nw.a:(DDD)V
+     203: aload         14
+     205: iload         16
+     207: ineg
+     208: iconst_1
+     209: isub
+     210: i2d
+     211: bipush        8
+     213: iload         15
+     215: iadd
+     216: i2d
+     217: dconst_0
+     218: invokevirtual #83                 // Method nw.a:(DDD)V
+     221: aload         14
+     223: iload         16
+     225: iconst_1
+     226: iadd
+     227: i2d
+     228: bipush        8
+     230: iload         15
+     232: iadd
+     233: i2d
+     234: dconst_0
+     235: invokevirtual #83                 // Method nw.a:(DDD)V
+     238: aload         14
+     240: iload         16
+     242: iconst_1
+     243: iadd
+     244: i2d
+     245: iconst_m1
+     246: iload         15
+     248: iadd
+     249: i2d
+     250: dconst_0
+     251: invokevirtual #83                 // Method nw.a:(DDD)V
+     254: aload         14
+     256: invokevirtual #82                 // Method nw.a:()V
+     259: sipush        3553
+     262: invokestatic  #91                 // Method org/lwjgl/opengl/GL11.glEnable:(I)V
+     265: aload         11
+     267: aload_2
+     268: aload         11
+     270: aload_2
+     271: invokevirtual #98                 // Method sj.a:(Ljava/lang/String;)I
+     274: ineg
+     275: iconst_2
+     276: idiv
+     277: iload         15
+     279: ldc           #2                  // int 553648127
+     281: invokevirtual #99                 // Method sj.b:(Ljava/lang/String;III)V
+     284: sipush        2929
+     287: invokestatic  #91                 // Method org/lwjgl/opengl/GL11.glEnable:(I)V
+     290: iconst_1
+     291: invokestatic  #89                 // Method org/lwjgl/opengl/GL11.glDepthMask:(Z)V
+     294: aload         11
+     296: aload_2
+     297: aload         11
+     299: aload_2
+     300: invokevirtual #98                 // Method sj.a:(Ljava/lang/String;)I
+     303: ineg
+     304: iconst_2
+     305: idiv
+     306: iload         15
+     308: iconst_m1
+     309: invokevirtual #99                 // Method sj.b:(Ljava/lang/String;III)V
+     312: sipush        2896
+     315: invokestatic  #91                 // Method org/lwjgl/opengl/GL11.glEnable:(I)V
+     318: sipush        3042
+     321: invokestatic  #90                 // Method org/lwjgl/opengl/GL11.glDisable:(I)V
+     324: fconst_1
+     325: fconst_1
+     326: fconst_1
+     327: fconst_1
+     328: invokestatic  #87                 // Method org/lwjgl/opengl/GL11.glColor4f:(FFFF)V
+     331: invokestatic  #93                 // Method org/lwjgl/opengl/GL11.glPopMatrix:()V
+     334: return
+
+  public void a(sn, double, double, double, float, float);
+    Code:
+       0: aload_0
+       1: aload_1
+       2: checkcast     #24                 // class ls
+       5: dload_2
+       6: dload         4
+       8: dload         6
+      10: fload         8
+      12: fload         9
+      14: invokevirtual #59                 // Method a:(Lls;DDDFF)V
+      17: return
+}
