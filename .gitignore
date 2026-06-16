@@ -1,6 +1,8 @@
 *.zip
 *.jar
 *.class
+!farn/ears_compat/EarSkinCompat.class
+!SmartMoving for ModLoader/**
 log.txt
 log2.txt
 __pycache__/
