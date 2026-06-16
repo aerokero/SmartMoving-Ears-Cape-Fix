@@ -313,4 +313,42 @@ public class EarSkinCompat {
             setForceTextureHeight(val);
         }
     }
+
+    public static void restorePlayerSkin(Object renderer, Object player) {
+        try {
+            if (renderer != null && player != null) {
+                Class<?> playerClass = Class.forName("gs");
+                if (playerClass.isInstance(player)) {
+                    String skinUrl = (String) getFieldValueRecursive(player, "bA");
+                    
+                    String fallback = null;
+                    Class<?> pCls = player.getClass();
+                    while (pCls != null) {
+                        try {
+                            java.lang.reflect.Method qMethod = pCls.getDeclaredMethod("q_");
+                            qMethod.setAccessible(true);
+                            fallback = (String) qMethod.invoke(player);
+                            break;
+                        } catch (Throwable t) {
+                            pCls = pCls.getSuperclass();
+                        }
+                    }
+                    
+                    Class<?> rCls = renderer.getClass();
+                    while (rCls != null) {
+                        try {
+                            java.lang.reflect.Method m = rCls.getDeclaredMethod("a", String.class, String.class);
+                            m.setAccessible(true);
+                            m.invoke(renderer, skinUrl, fallback);
+                            break;
+                        } catch (Throwable t) {
+                            rCls = rCls.getSuperclass();
+                        }
+                    }
+                }
+            }
+        } catch (Throwable t) {
+            // Ignore
+        }
+    }
 }
