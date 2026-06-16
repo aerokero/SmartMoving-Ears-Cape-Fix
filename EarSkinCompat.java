@@ -5,6 +5,7 @@ public class EarSkinCompat {
     public static void setRenderingPlayer(gs player, float tickDelta) {
         renderingPlayer = player;
         renderingTickDelta = tickDelta;
+        renderFrame++;
     }
 
     public static net.minecraft.move.ModelRotationRenderer slimLeftArm;
@@ -14,6 +15,8 @@ public class EarSkinCompat {
 
     public static net.minecraft.move.ModelPlayer mainModel;
     public static net.minecraft.move.ModelPlayer modelCape;
+    public static int renderFrame = 0;
+    public static int aetherCapeFrame = -2;
     public static net.minecraft.move.ModelPlayer modelEnergyShield;
     public static net.minecraft.move.ModelPlayer modelMisc;
     public static net.minecraft.move.ModelPlayer modelArmorChestplate;
@@ -73,7 +76,8 @@ public class EarSkinCompat {
                 } catch (Throwable t) {
                     // Ignore
                 }
-                boolean hide = mp.isCrawl || mp.isClimb || mp.isSwim || mp.isDive || mp.isCrawlClimb;
+                boolean hasAetherCape = (aetherCapeFrame >= renderFrame - 1);
+                boolean hide = mp.isCrawl || mp.isClimb || mp.isSwim || mp.isDive || mp.isCrawlClimb || hasAetherCape;
                 mp.i.h = !hasEarsCape && !hide;
             }
         } catch (Throwable t) {
@@ -259,12 +263,6 @@ public class EarSkinCompat {
         try {
             fh model = (fh) mp;
             if (model != null && model.i instanceof net.minecraft.move.ModelCapeRenderer) {
-                // If Aether cape is being rendered, hide vanilla cape
-                boolean isAether = (modelCape != null && mp == modelCape);
-                if (isAether && mainModel != null && mainModel.i != null) {
-                    mainModel.i.h = false;
-                }
-
                 gs player = renderingPlayer;
                 float tickDelta = renderingTickDelta;
 
@@ -305,12 +303,6 @@ public class EarSkinCompat {
         if (shouldPop) {
             org.lwjgl.opengl.GL11.glPushMatrix();
         }
-
-        // Restore vanilla cape visibility after Aether render
-        boolean isAether = (modelCape != null && mp == modelCape);
-        if (isAether && mainModel != null && mainModel.i != null) {
-            mainModel.i.h = true;
-        }
     }
 
     public static void adjustCape(Object capeRenderer, Object player) {
@@ -326,6 +318,7 @@ public class EarSkinCompat {
                 // Aether path uses modelCape MCR; vanilla path uses a separate ModelBiped MCR
                 // Vanilla: 2 voxels back (-0.125f), Aether: 1 voxel back (+0.0625f)
                 boolean isAether = (modelCape != null && modelCape.i == capeRenderer);
+                if (isAether) aetherCapeFrame = renderFrame;
                 org.lwjgl.opengl.GL11.glTranslatef(0.0f, 0.0f, isAether ? 0.0625f : -0.125f);
 
                 boolean isSneaking = p.t();
